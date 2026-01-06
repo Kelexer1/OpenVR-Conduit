@@ -15,30 +15,36 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\SharedFiles\src\ControllerCommandSender.cpp">
+    <ClCompile Include="..\SharedFiles\src\DevicePoseCommandSender.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\SharedFiles\src\SharedControllerMemory.cpp">
+    <ClCompile Include="..\SharedFiles\src\SharedDeviceMemory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DeviceInputCommandSender.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\SharedFiles\headers\ControllerTypes.h">
+    <ClInclude Include="..\SharedFiles\headers\DeviceTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\SharedFiles\headers\IControllerCommandSender.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\SharedFiles\headers\IControllerEventListener.h">
+    <ClInclude Include="..\SharedFiles\headers\IDevicePoseEventListener.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\SharedFiles\headers\openvr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\SharedFiles\headers\SharedControllerMemory.h">
+    <ClInclude Include="..\SharedFiles\headers\SharedDeviceMemory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\SharedFiles\headers\ControllerCommandSender.h">
+    <ClInclude Include="..\SharedFiles\headers\DevicePoseCommandSender.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DeviceInputCommandSender.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IDeviceInputEventListener.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,6 +1,6 @@
 #pragma once
-#include "SharedControllerMemory.h"
-#include "ControllerCommandSender.h"
+#include "SharedDeviceMemory.h"
+#include "DevicePoseCommandSender.h"
 
-extern SharedControllerMemoryIO sharedMemoryIO;
-extern ControllerCommandSender commandSender;
+extern SharedDeviceMemoryIO sharedMemoryIO;
+extern DevicePoseCommandSender commandSender;

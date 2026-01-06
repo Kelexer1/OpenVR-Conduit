@@ -1,3 +1,3 @@
 #include "globals.h"
-SharedControllerMemoryIO sharedMemoryIO(nullptr);
-ControllerCommandSender commandSender(&sharedMemoryIO);
+SharedDeviceMemoryIO sharedMemoryIO(nullptr);
+DevicePoseCommandSender commandSender(&sharedMemoryIO);

@@ -1,19 +1,19 @@
-#include "ControllerCommandSender.h"
+#include "DevicePoseCommandSender.h"
 
-ControllerCommandSender::ControllerCommandSender(SharedControllerMemoryIO* sharedMemory) :
+DevicePoseCommandSender::DevicePoseCommandSender(SharedDeviceMemoryIO* sharedMemory) :
 	sharedMemory(sharedMemory) {}
 
-void ControllerCommandSender::setPose(const uint32_t deviceIndex, ControllerPose& pose) {
+void DevicePoseCommandSender::setPose(const uint32_t deviceIndex, DevicePose& pose) {
 	bool result;
-	if (sharedMemory && sharedMemory->isControllerSlotActive(deviceIndex, result) && result) {
+	if (sharedMemory && sharedMemory->isDeviceSlotActive(deviceIndex, result) && result) {
 		sharedMemory->writeOverridenPose(deviceIndex, pose);
 	}
 }
 
-void ControllerCommandSender::setPosition(const uint32_t deviceIndex, ControllerVector3& newPosition) {
+void DevicePoseCommandSender::setPosition(const uint32_t deviceIndex, DeviceVector3& newPosition) {
 	bool result;
-	if (sharedMemory && sharedMemory->isControllerSlotActive(deviceIndex, result) && result) {
-		ControllerPose overridePose;
+	if (sharedMemory && sharedMemory->isDeviceSlotActive(deviceIndex, result) && result) {
+		DevicePose overridePose;
 
 		if (sharedMemory->readOverridenPose(deviceIndex, overridePose)) {
 			overridePose.vecPosition[0] = newPosition.v[0];
@@ -25,10 +25,10 @@ void ControllerCommandSender::setPosition(const uint32_t deviceIndex, Controller
 	}
 }
 
-void ControllerCommandSender::setRotation(const uint32_t deviceIndex, ControllerQuaternion& newRotation) {
+void DevicePoseCommandSender::setRotation(const uint32_t deviceIndex, DeviceQuaternion& newRotation) {
 	bool result;
-	if (sharedMemory && sharedMemory->isControllerSlotActive(deviceIndex, result) && result) {
-		ControllerPose overridePose;
+	if (sharedMemory && sharedMemory->isDeviceSlotActive(deviceIndex, result) && result) {
+		DevicePose overridePose;
 
 		if (sharedMemory->readOverridenPose(deviceIndex, overridePose)) {
 			overridePose.qRotation.w = newRotation.w;
@@ -41,10 +41,10 @@ void ControllerCommandSender::setRotation(const uint32_t deviceIndex, Controller
 	}
 }
 
-void ControllerCommandSender::setVelocity(const uint32_t deviceIndex, ControllerVector3& newVelocity) {
+void DevicePoseCommandSender::setVelocity(const uint32_t deviceIndex, DeviceVector3& newVelocity) {
 	bool result;
-	if (sharedMemory && sharedMemory->isControllerSlotActive(deviceIndex, result) && result) {
-		ControllerPose overridePose;
+	if (sharedMemory && sharedMemory->isDeviceSlotActive(deviceIndex, result) && result) {
+		DevicePose overridePose;
 
 		if (sharedMemory->readOverridenPose(deviceIndex, overridePose)) {
 			overridePose.vecVelocity[0] = newVelocity.v[0];
@@ -56,10 +56,10 @@ void ControllerCommandSender::setVelocity(const uint32_t deviceIndex, Controller
 	}
 }
 
-void ControllerCommandSender::setAngularVelocity(const uint32_t deviceIndex, ControllerVector3& newAngularVelocity) {
+void DevicePoseCommandSender::setAngularVelocity(const uint32_t deviceIndex, DeviceVector3& newAngularVelocity) {
 	bool result;
-	if (sharedMemory && sharedMemory->isControllerSlotActive(deviceIndex, result) && result) {
-		ControllerPose overridePose;
+	if (sharedMemory && sharedMemory->isDeviceSlotActive(deviceIndex, result) && result) {
+		DevicePose overridePose;
 
 		if (sharedMemory->readOverridenPose(deviceIndex, overridePose)) {
 			overridePose.vecAngularVelocity[0] = newAngularVelocity.v[0];
@@ -71,10 +71,10 @@ void ControllerCommandSender::setAngularVelocity(const uint32_t deviceIndex, Con
 	}
 }
 
-void ControllerCommandSender::setAcceleration(const uint32_t deviceIndex, ControllerVector3& newAcceleration) {
+void DevicePoseCommandSender::setAcceleration(const uint32_t deviceIndex, DeviceVector3& newAcceleration) {
 	bool result;
-	if (sharedMemory && sharedMemory->isControllerSlotActive(deviceIndex, result) && result) {
-		ControllerPose overridePose;
+	if (sharedMemory && sharedMemory->isDeviceSlotActive(deviceIndex, result) && result) {
+		DevicePose overridePose;
 
 		if (sharedMemory->readOverridenPose(deviceIndex, overridePose)) {
 			overridePose.vecAcceleration[0] = newAcceleration.v[0];
@@ -86,10 +86,10 @@ void ControllerCommandSender::setAcceleration(const uint32_t deviceIndex, Contro
 	}
 }
 
-void ControllerCommandSender::setAngularAcceleration(const uint32_t deviceIndex, ControllerVector3& newAngularAcceleration) {
+void DevicePoseCommandSender::setAngularAcceleration(const uint32_t deviceIndex, DeviceVector3& newAngularAcceleration) {
 	bool result;
-	if (sharedMemory && sharedMemory->isControllerSlotActive(deviceIndex, result) && result) {
-		ControllerPose overridePose;
+	if (sharedMemory && sharedMemory->isDeviceSlotActive(deviceIndex, result) && result) {
+		DevicePose overridePose;
 
 		if (sharedMemory->readOverridenPose(deviceIndex, overridePose)) {
 			overridePose.vecAngularAcceleration[0] = newAngularAcceleration.v[0];
@@ -101,10 +101,10 @@ void ControllerCommandSender::setAngularAcceleration(const uint32_t deviceIndex,
 	}
 }
 
-ControllerPose* ControllerCommandSender::getPose(const uint32_t deviceIndex) const {
+DevicePose* DevicePoseCommandSender::getPose(const uint32_t deviceIndex) const {
 	bool result;
-	if (sharedMemory && sharedMemory->isControllerSlotActive(deviceIndex, result) && result) {
-		ControllerPose overridePose;
+	if (sharedMemory && sharedMemory->isDeviceSlotActive(deviceIndex, result) && result) {
+		DevicePose overridePose;
 
 		if (sharedMemory->readOverridenPose(deviceIndex, overridePose)) {
 			return &overridePose;
@@ -113,10 +113,10 @@ ControllerPose* ControllerCommandSender::getPose(const uint32_t deviceIndex) con
 	return nullptr;
 }
 
-ControllerPose* ControllerCommandSender::getNaturalPose(const uint32_t deviceIndex) const {
+DevicePose* DevicePoseCommandSender::getNaturalPose(const uint32_t deviceIndex) const {
 	bool result;
-	if (sharedMemory && sharedMemory->isControllerSlotActive(deviceIndex, result) && result) {
-		ControllerPose naturalPose;
+	if (sharedMemory && sharedMemory->isDeviceSlotActive(deviceIndex, result) && result) {
+		DevicePose naturalPose;
 
 		if (sharedMemory->readNaturalPose(deviceIndex, naturalPose)) {
 			return &naturalPose;
@@ -125,16 +125,16 @@ ControllerPose* ControllerCommandSender::getNaturalPose(const uint32_t deviceInd
 	return nullptr;
 }
 
-void ControllerCommandSender::setUseCustomPose(const uint32_t deviceIndex, const bool shouldOverridePose) {
+void DevicePoseCommandSender::setUseCustomPose(const uint32_t deviceIndex, const bool shouldOverridePose) {
 	bool result;
-	if (sharedMemory && sharedMemory->isControllerSlotActive(deviceIndex, result) && result) {
+	if (sharedMemory && sharedMemory->isDeviceSlotActive(deviceIndex, result) && result) {
 		sharedMemory->writeUseCustomPose(deviceIndex, shouldOverridePose);
 	}
 }
 
-bool* ControllerCommandSender::getUseCustomPose(const uint32_t deviceIndex) const {
+bool* DevicePoseCommandSender::getUseCustomPose(const uint32_t deviceIndex) const {
 	bool result;
-	if (sharedMemory && sharedMemory->isControllerSlotActive(deviceIndex, result) && result) {
+	if (sharedMemory && sharedMemory->isDeviceSlotActive(deviceIndex, result) && result) {
 		bool shouldOverridePose;
 		if (sharedMemory->readUseCustomPose(deviceIndex, shouldOverridePose)) {
 			return &shouldOverridePose;
@@ -143,16 +143,16 @@ bool* ControllerCommandSender::getUseCustomPose(const uint32_t deviceIndex) cons
 	return nullptr;
 }
 
-void ControllerCommandSender::setUsePingPong(const uint32_t deviceIndex, const bool usePingPong) {
+void DevicePoseCommandSender::setUsePingPong(const uint32_t deviceIndex, const bool usePingPong) {
 	bool result;
-	if (sharedMemory && sharedMemory->isControllerSlotActive(deviceIndex, result) && result) {
+	if (sharedMemory && sharedMemory->isDeviceSlotActive(deviceIndex, result) && result) {
 		sharedMemory->writeUsePingPong(deviceIndex, usePingPong);
 	}
 }
 
-bool* ControllerCommandSender::getUsePingPong(const uint32_t deviceIndex) {
+bool* DevicePoseCommandSender::getUsePingPong(const uint32_t deviceIndex) {
 	bool result;
-	if (sharedMemory && sharedMemory->isControllerSlotActive(deviceIndex, result) && result) {
+	if (sharedMemory && sharedMemory->isDeviceSlotActive(deviceIndex, result) && result) {
 		bool usePingPong;
 		if (sharedMemory->readUsePingPong(deviceIndex, usePingPong)) {
 			return &usePingPong;

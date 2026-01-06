@@ -1,6 +1,6 @@
 #include "LogManager.h"
 
-std::string OUTPUT_PATH = "C:\\temp\\log_ControllerHooker.log";
+std::string OUTPUT_PATH = "C:\\OpenVRConduit\\log_OpenVRConduit.log";
 
 std::ofstream LogManager::logFile;
 bool LogManager::initialized = false;

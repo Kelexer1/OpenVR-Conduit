@@ -1,9 +1,8 @@
-﻿C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(524,5): warning MSB8004: Output Directory does not end with a trailing slash.  This build instance will add the slash as it is required to allow proper evaluation of the Output Directory.
-  ControllerCommandSender.cpp
-  SharedControllerMemory.cpp
-  Generating Code...
-C:\Users\tjm11\source\repos\ControllerHooker\SharedFiles\src\ControllerCommandSender.cpp(110,1): warning C4172: returning address of local variable or temporary : overridePose
-C:\Users\tjm11\source\repos\ControllerHooker\SharedFiles\src\ControllerCommandSender.cpp(140,1): warning C4172: returning address of local variable or temporary : shouldOverridePose
-C:\Users\tjm11\source\repos\ControllerHooker\SharedFiles\src\ControllerCommandSender.cpp(122,1): warning C4172: returning address of local variable or temporary : naturalPose
-C:\Users\tjm11\source\repos\ControllerHooker\SharedFiles\src\ControllerCommandSender.cpp(158,1): warning C4172: returning address of local variable or temporary : usePingPong
-  ControllerHookerLib.vcxproj -> C:\Users\tjm11\source\repos\ControllerHooker\Build\ControllerHookerLib\Debug\ControllerHookerLibDebug.lib
+﻿C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(534,5): warning MSB8004: Output Directory does not end with a trailing slash.  This build instance will add the slash as it is required to allow proper evaluation of the Output Directory.
+C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(548,5): warning MSB8028: The intermediate directory (x64\Debug\) contains files shared from another project (ControllerHookerLib.vcxproj).  This can lead to incorrect clean and rebuild behavior.
+  DevicePoseCommandSender.cpp
+C:\Users\Thomas\Desktop\OpenVR-ControllerHooker\SharedFiles\src\DevicePoseCommandSender.cpp(110,1): warning C4172: returning address of local variable or temporary : overridePose
+C:\Users\Thomas\Desktop\OpenVR-ControllerHooker\SharedFiles\src\DevicePoseCommandSender.cpp(122,1): warning C4172: returning address of local variable or temporary : naturalPose
+C:\Users\Thomas\Desktop\OpenVR-ControllerHooker\SharedFiles\src\DevicePoseCommandSender.cpp(140,1): warning C4172: returning address of local variable or temporary : shouldOverridePose
+C:\Users\Thomas\Desktop\OpenVR-ControllerHooker\SharedFiles\src\DevicePoseCommandSender.cpp(158,1): warning C4172: returning address of local variable or temporary : usePingPong
+  ControllerHookerLib.vcxproj -> C:\Users\Thomas\Desktop\OpenVR-ControllerHooker\Build\ConduitLib\Debug\ConduitLibDebug.lib

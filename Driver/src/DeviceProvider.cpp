@@ -1,7 +1,7 @@
 #include "DeviceProvider.h"
 
 #include "LogManager.h"
-#include "SharedControllerMemory.h"
+#include "SharedDeviceMemory.h"
 #include "globals.h"
 
 vr::EVRInitError DeviceProvider::Init(vr::IVRDriverContext* pDriverContext) {
@@ -9,7 +9,9 @@ vr::EVRInitError DeviceProvider::Init(vr::IVRDriverContext* pDriverContext) {
 
 	// Initialize all essential components
 	LogManager::initialize();
-	HookManager::setupHooks((void*)vr::VRServerDriverHost());
+	HookManager::initializeHooks();
+	HookManager::setupHooks_IVRServerDriverHost((void*)vr::VRServerDriverHost());
+	HookManager::setupHooks_IVRDriverInput((void*)vr::VRDriverInput());
 
 	bool sharedMemoryResult = sharedMemoryIO.initialize(true);
 	LogManager::log(LOG_INFO, "Shared memory initialization {0}", sharedMemoryResult ? "succeeded" : "failed");

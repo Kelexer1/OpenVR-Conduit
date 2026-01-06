@@ -5,12 +5,12 @@
 #include "HookManager.h"
 
 /**
- * Initializes the ControllerHooker driver as a SteamVR driver
+ * Initializes the Conduit driver as a SteamVR driver
  */
 class DeviceProvider : public vr::IServerTrackedDeviceProvider {
 public:
 	/**
-	 * @brief Initializes the ControllerHooker driver, shared memory, and controllers
+	 * @brief Initializes the Conduit driver, shared memory, and controllers
 	 * @return The error code (usually success)
 	 */
 	virtual vr::EVRInitError Init(vr::IVRDriverContext* pDriverContext) override;

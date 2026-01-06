@@ -1,9 +1,9 @@
-#include "SharedControllerMemory.h"
+#include "SharedDeviceMemory.h"
 
-SharedControllerMemoryIO::SharedControllerMemoryIO(IControllerEventListener* eventListener) :
+SharedDeviceMemoryIO::SharedDeviceMemoryIO(IDevicePoseEventListener* eventListener) :
 	hMapFile(NULL), sharedMemory(nullptr), hMutex(nullptr), eventListener(eventListener) {}
 
-SharedControllerMemoryIO::~SharedControllerMemoryIO() {
+SharedDeviceMemoryIO::~SharedDeviceMemoryIO() {
 	if (sharedMemory) {
 		UnmapViewOfFile(sharedMemory);
 	}
@@ -22,10 +22,10 @@ SharedControllerMemoryIO::~SharedControllerMemoryIO() {
 	}
 }
 
-bool SharedControllerMemoryIO::initialize(bool isDriver) {
+bool SharedDeviceMemoryIO::initialize(bool isDriver) {
 	if (isDriver) {
 		hMapFile = CreateFileMappingA(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE,
-			0, sizeof(SharedControllerMemory), SHM_NAME);
+			0, sizeof(SharedDeviceMemory), SHM_NAME);
 	} else {
 		hMapFile = OpenFileMappingA(FILE_MAP_ALL_ACCESS, FALSE, SHM_NAME);
 	}
@@ -34,7 +34,7 @@ bool SharedControllerMemoryIO::initialize(bool isDriver) {
 		return false;
 	}
 
-	sharedMemory = static_cast<SharedControllerMemory*>(MapViewOfFile(hMapFile, FILE_MAP_ALL_ACCESS, 0, 0, 0));
+	sharedMemory = static_cast<SharedDeviceMemory*>(MapViewOfFile(hMapFile, FILE_MAP_ALL_ACCESS, 0, 0, 0));
 
 	if (!sharedMemory) {
 		return false;
@@ -63,7 +63,7 @@ bool SharedControllerMemoryIO::initialize(bool isDriver) {
 	return true;
 }
 
-void SharedControllerMemoryIO::writeOverridenPose(uint32_t deviceIndex, const ControllerPose& pose) {
+void SharedDeviceMemoryIO::writeOverridenPose(uint32_t deviceIndex, const DevicePose& pose) {
 	if (!sharedMemory || !hMutex || deviceIndex >= MAX_DEVICES) {
 		return;
 	}
@@ -75,7 +75,7 @@ void SharedControllerMemoryIO::writeOverridenPose(uint32_t deviceIndex, const Co
 	ReleaseMutex(hMutex);
 }
 
-bool SharedControllerMemoryIO::readOverridenPose(uint32_t deviceIndex, ControllerPose& outPose) const {
+bool SharedDeviceMemoryIO::readOverridenPose(uint32_t deviceIndex, DevicePose& outPose) const {
 	if (!sharedMemory || !hMutex || deviceIndex >= MAX_DEVICES || !sharedMemory->slots[deviceIndex].isOccupied) {
 		return false;
 	}
@@ -85,7 +85,7 @@ bool SharedControllerMemoryIO::readOverridenPose(uint32_t deviceIndex, Controlle
 	return true;
 }
 
-void SharedControllerMemoryIO::writeNaturalPose(uint32_t deviceIndex, const ControllerPose& pose) {
+void SharedDeviceMemoryIO::writeNaturalPose(uint32_t deviceIndex, const DevicePose& pose) {
 	if (!sharedMemory || !hMutex ||  deviceIndex >= MAX_DEVICES) {
 		return;
 	}
@@ -98,7 +98,7 @@ void SharedControllerMemoryIO::writeNaturalPose(uint32_t deviceIndex, const Cont
 	ReleaseMutex(hMutex);
 }
 
-bool SharedControllerMemoryIO::readNaturalPose(uint32_t deviceIndex, ControllerPose& outPose) const {
+bool SharedDeviceMemoryIO::readNaturalPose(uint32_t deviceIndex, DevicePose& outPose) const {
 	if (!sharedMemory || !hMutex || deviceIndex >= MAX_DEVICES || !sharedMemory->slots[deviceIndex].isOccupied) {
 		return false;
 	}
@@ -108,7 +108,7 @@ bool SharedControllerMemoryIO::readNaturalPose(uint32_t deviceIndex, ControllerP
 	return true;
 }
 
-void SharedControllerMemoryIO::writeUseCustomPose(uint32_t deviceIndex, const bool useCustomPose) {
+void SharedDeviceMemoryIO::writeUseCustomPose(uint32_t deviceIndex, const bool useCustomPose) {
 	if (!sharedMemory || !hMutex ||  deviceIndex >= MAX_DEVICES) {
 		return;
 	}
@@ -119,7 +119,7 @@ void SharedControllerMemoryIO::writeUseCustomPose(uint32_t deviceIndex, const bo
 	ReleaseMutex(hMutex);
 }
 
-bool SharedControllerMemoryIO::readUseCustomPose(uint32_t deviceIndex, bool& outUseCustomPose) const {
+bool SharedDeviceMemoryIO::readUseCustomPose(uint32_t deviceIndex, bool& outUseCustomPose) const {
 	if (!sharedMemory || !hMutex || deviceIndex >= MAX_DEVICES || !sharedMemory->slots[deviceIndex].isOccupied) {
 		return false;
 	}
@@ -129,7 +129,7 @@ bool SharedControllerMemoryIO::readUseCustomPose(uint32_t deviceIndex, bool& out
 	return true;
 }
 
-bool SharedControllerMemoryIO::isControllerSlotActive(uint32_t deviceIndex, bool& outIsOccupied) const {
+bool SharedDeviceMemoryIO::isDeviceSlotActive(uint32_t deviceIndex, bool& outIsOccupied) const {
 	if (!sharedMemory || !hMutex || deviceIndex >= MAX_DEVICES) {
 		return false;
 	}
@@ -140,7 +140,7 @@ bool SharedControllerMemoryIO::isControllerSlotActive(uint32_t deviceIndex, bool
 	return true;
 }
 
-bool SharedControllerMemoryIO::readControllerNaturalPoseCounter(uint32_t deviceIndex, int32_t& outCounter) {
+bool SharedDeviceMemoryIO::readDeviceNaturalPoseCounter(uint32_t deviceIndex, int32_t& outCounter) {
 	if (!sharedMemory || !hMutex || deviceIndex >= MAX_DEVICES || !sharedMemory->slots[deviceIndex].isOccupied) {
 		return false;
 	}
@@ -150,7 +150,7 @@ bool SharedControllerMemoryIO::readControllerNaturalPoseCounter(uint32_t deviceI
 	return true;
 }
 
-bool SharedControllerMemoryIO::readUsePingPong(uint32_t deviceIndex, bool& outUsePingPing) {
+bool SharedDeviceMemoryIO::readUsePingPong(uint32_t deviceIndex, bool& outUsePingPing) {
 	if (!sharedMemory || !hMutex || deviceIndex >= MAX_DEVICES || !sharedMemory->slots[deviceIndex].isOccupied) {
 		return false;
 	}
@@ -160,7 +160,7 @@ bool SharedControllerMemoryIO::readUsePingPong(uint32_t deviceIndex, bool& outUs
 	return true;
 }
 
-void SharedControllerMemoryIO::writeUsePingPong(uint32_t deviceIndex, const bool usePingPong) {
+void SharedDeviceMemoryIO::writeUsePingPong(uint32_t deviceIndex, const bool usePingPong) {
 	if (!sharedMemory || !hMutex || deviceIndex >= MAX_DEVICES) {
 		return;
 	}
@@ -171,12 +171,12 @@ void SharedControllerMemoryIO::writeUsePingPong(uint32_t deviceIndex, const bool
 	ReleaseMutex(hMutex);
 }
 
-SharedControllerMemory* SharedControllerMemoryIO::getSharedControllerMemory() const {
+SharedDeviceMemory* SharedDeviceMemoryIO::getSharedDeviceMemory() const {
 	return sharedMemory;
 }
 
 // Driver side
-ControllerPose SharedControllerMemoryIO::pingPong(uint32_t deviceIndex) {
+DevicePose SharedDeviceMemoryIO::pingPong(uint32_t deviceIndex) {
 	auto& slot = sharedMemory->slots[deviceIndex];
 
 	slot.requestPoseUpdate.store(true, std::memory_order_release);
@@ -193,7 +193,7 @@ ControllerPose SharedControllerMemoryIO::pingPong(uint32_t deviceIndex) {
 }
 
 // Client side
-void SharedControllerMemoryIO::pollForUpdates() {
+void SharedDeviceMemoryIO::pollForUpdates() {
 	for (uint32_t i = 0; i < MAX_DEVICES; i++) {
 		bool usePingPong;
 		if (readUsePingPong(i, usePingPong) && usePingPong) {
@@ -201,9 +201,9 @@ void SharedControllerMemoryIO::pollForUpdates() {
 
 			if (slot.requestPoseUpdate.load(std::memory_order_acquire)) {
 				WaitForSingleObject(hMutex, INFINITE);
-				const ControllerPose naturalPose = slot.naturalPose;
+				const DevicePose naturalPose = slot.naturalPose;
 
-				ControllerPose newPose = eventListener->poseRequested(i, naturalPose);
+				DevicePose newPose = eventListener->poseRequested(i, naturalPose);
 
 				slot.overridenPose = newPose;
 				slot.requestPoseUpdate.store(false, std::memory_order_release);

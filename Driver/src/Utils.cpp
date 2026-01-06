@@ -12,8 +12,8 @@ vr::ETrackedDeviceClass getDeviceClass(uint32_t deviceIndex) {
 	}
 }
 
-ControllerPose FromDriverPose(const vr::DriverPose_t& pose) {
-    ControllerPose cp{};
+DevicePose FromDriverPose(const vr::DriverPose_t& pose) {
+    DevicePose cp{};
     cp.poseTimeOffset = pose.poseTimeOffset;
 
     cp.qWorldFromDriverRotation = { pose.qWorldFromDriverRotation.w, pose.qWorldFromDriverRotation.x, pose.qWorldFromDriverRotation.y, pose.qWorldFromDriverRotation.z };
@@ -31,7 +31,7 @@ ControllerPose FromDriverPose(const vr::DriverPose_t& pose) {
     std::copy(std::begin(pose.vecAngularVelocity), std::end(pose.vecAngularVelocity), cp.vecAngularVelocity);
     std::copy(std::begin(pose.vecAngularAcceleration), std::end(pose.vecAngularAcceleration), cp.vecAngularAcceleration);
 
-    cp.result = static_cast<ControllerTrackingResult>(pose.result);
+    cp.result = static_cast<DeviceTrackingResult>(pose.result);
 
     cp.poseIsValid = pose.poseIsValid;
     cp.willDriftInYaw = pose.willDriftInYaw;
@@ -41,7 +41,7 @@ ControllerPose FromDriverPose(const vr::DriverPose_t& pose) {
     return cp;
 }
 
-vr::DriverPose_t ToDriverPose(const ControllerPose& cp) {
+vr::DriverPose_t ToDriverPose(const DevicePose& cp) {
     vr::DriverPose_t pose = {};
     pose.poseTimeOffset = cp.poseTimeOffset;
 

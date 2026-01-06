@@ -21,7 +21,7 @@ enum LogType {
 class LogManager {
 public:
 	/**
-	 * @brief Initializes the output file (C:\temp\log_ControllerEmulator.txt)
+	 * @brief Initializes the output file (C:\OpenVRConduit\log_OpenVRConduit.txt)
 	 * @return true if initialization was successful, false otherwise
 	 */
 	static bool initialize();

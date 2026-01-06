@@ -8,9 +8,9 @@
  * 
  * This class should *not* be instantiated directly. Instead, use the provided ControllerCommandSender class
  */
-class IControllerCommandSender {
+class IControllerPoseCommandSender {
 public:
-	virtual ~IControllerCommandSender() = default;
+	virtual ~IControllerPoseCommandSender() = default;
 
 	///=========================
 	/// Pose Manipulations

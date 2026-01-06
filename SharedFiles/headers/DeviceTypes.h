@@ -4,12 +4,12 @@
 /// consult the OpenVR SDK documentation for the respective type
 
 /// struct HmdVector3_t
-struct ControllerVector3 {
+struct DeviceVector3 {
 	double v[3] = { 0.0, 0.0, 0.0 };
 };
 
 /// struct HmdQuaternion_t
-struct ControllerQuaternion {
+struct DeviceQuaternion {
 	double w = 1.0;
 	double x = 0.0;
 	double y = 0.0;
@@ -17,7 +17,7 @@ struct ControllerQuaternion {
 };
 
 /// enum ETrackingResult
-enum ControllerTrackingResult {
+enum DeviceTrackingResult {
 	TrackingResult_Uninitialized = 1,
 
 	TrackingResult_Calibrating_InProgress = 100,
@@ -30,13 +30,13 @@ enum ControllerTrackingResult {
 };
 
 /// struct DriverPose_t
-struct ControllerPose {
+struct DevicePose {
 	double poseTimeOffset = 0.0;
 
-	ControllerQuaternion qWorldFromDriverRotation;
+	DeviceQuaternion qWorldFromDriverRotation;
 	double vecWorldFromDriverTranslation[3] = { 0.0, 0.0, 0.0 };
 
-	ControllerQuaternion qDriverFromHeadRotation;
+	DeviceQuaternion qDriverFromHeadRotation;
 	double vecDriverFromHeadTranslation[3] = { 0.0, 0.0, 0.0 };
 
 	double vecPosition[3] = { 0.0, 0.0, 0.0 };
@@ -45,13 +45,13 @@ struct ControllerPose {
 
 	double vecAcceleration[3] = { 0.0, 0.0, 0.0 };
 
-	ControllerQuaternion qRotation;
+	DeviceQuaternion qRotation;
 
 	double vecAngularVelocity[3] = { 0.0, 0.0, 0.0 };
 
 	double vecAngularAcceleration[3] = { 0.0, 0.0, 0.0 };
 
-	ControllerTrackingResult result = TrackingResult_Uninitialized;
+	DeviceTrackingResult result = TrackingResult_Uninitialized;
 
 	bool poseIsValid = false;
 	bool willDriftInYaw = false;

@@ -2,7 +2,7 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-      <FullPath>C:\Users\tjm11\source\repos\ControllerHooker\Build\ControllerHookerDriver\Debug\bin\win64\driver_controllerhooker.dll</FullPath>
+      <FullPath>C:\Users\Thomas\Desktop\OpenVR-ControllerHooker\Build\ControllerHookerDriver\Debug\bin\win64\driver_controllerhooker.dll</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />

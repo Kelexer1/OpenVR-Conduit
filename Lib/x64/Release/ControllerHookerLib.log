@@ -1,4 +1,4 @@
-﻿C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(524,5): warning MSB8004: Output Directory does not end with a trailing slash.  This build instance will add the slash as it is required to allow proper evaluation of the Output Directory.
-  ControllerCommandSender.cpp
+﻿C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(534,5): warning MSB8004: Output Directory does not end with a trailing slash.  This build instance will add the slash as it is required to allow proper evaluation of the Output Directory.
+  ControllerPoseCommandSender.cpp
   SharedControllerMemory.cpp
-  ControllerHookerLib.vcxproj -> C:\Users\tjm11\source\repos\ControllerHooker\Build\ControllerHookerLib\Release\ControllerHookerLibRelease.lib
+  ControllerHookerLib.vcxproj -> C:\Users\Thomas\Desktop\OpenVR-ControllerHooker\Build\ControllerHookerLib\Release\ControllerHookerLibRelease.lib

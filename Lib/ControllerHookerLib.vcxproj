@@ -24,31 +24,32 @@
     <ProjectGuid>{e6c47a57-7f11-4270-ab83-6bc43f4f9017}</ProjectGuid>
     <RootNamespace>ControllerHookerLib</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>ConduitLib</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -156,16 +157,18 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\SharedFiles\src\ControllerCommandSender.cpp" />
-    <ClCompile Include="..\SharedFiles\src\SharedControllerMemory.cpp" />
+    <ClCompile Include="..\SharedFiles\src\DevicePoseCommandSender.cpp" />
+    <ClCompile Include="..\SharedFiles\src\SharedDeviceMemory.cpp" />
+    <ClCompile Include="DeviceInputCommandSender.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\SharedFiles\headers\ControllerCommandSender.h" />
-    <ClInclude Include="..\SharedFiles\headers\ControllerTypes.h" />
-    <ClInclude Include="..\SharedFiles\headers\IControllerCommandSender.h" />
-    <ClInclude Include="..\SharedFiles\headers\IControllerEventListener.h" />
+    <ClInclude Include="..\SharedFiles\headers\DevicePoseCommandSender.h" />
+    <ClInclude Include="..\SharedFiles\headers\DeviceTypes.h" />
+    <ClInclude Include="..\SharedFiles\headers\IDevicePoseEventListener.h" />
     <ClInclude Include="..\SharedFiles\headers\openvr.h" />
-    <ClInclude Include="..\SharedFiles\headers\SharedControllerMemory.h" />
+    <ClInclude Include="..\SharedFiles\headers\SharedDeviceMemory.h" />
+    <ClInclude Include="DeviceInputCommandSender.h" />
+    <ClInclude Include="IDeviceInputEventListener.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
