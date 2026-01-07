@@ -158,15 +158,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\SharedFiles\src\DevicePoseCommandSender.cpp" />
-    <ClCompile Include="..\SharedFiles\src\SharedDeviceMemory.cpp" />
     <ClCompile Include="DeviceInputCommandSender.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\SharedFiles\headers\DevicePoseCommandSender.h" />
-    <ClInclude Include="..\SharedFiles\headers\DeviceTypes.h" />
     <ClInclude Include="..\SharedFiles\headers\IDevicePoseEventListener.h" />
     <ClInclude Include="..\SharedFiles\headers\openvr.h" />
-    <ClInclude Include="..\SharedFiles\headers\SharedDeviceMemory.h" />
     <ClInclude Include="DeviceInputCommandSender.h" />
     <ClInclude Include="IDeviceInputEventListener.h" />
   </ItemGroup>

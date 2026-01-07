@@ -18,9 +18,6 @@
     <ClInclude Include="..\Driver\headers\DeviceProvider.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Driver\headers\globals.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\Driver\headers\HookManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -28,6 +25,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="headers\Utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\ObjectSchemas.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\ObjectTypeSchemaBaker.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\SharedDeviceMemoryDriver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -38,9 +47,6 @@
     <ClCompile Include="..\Driver\src\dllmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Driver\src\globals.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\Driver\src\HookManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -48,6 +54,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ObjectTypeSchemaBaker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\SharedDeviceMemoryDriver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

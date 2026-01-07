@@ -18,24 +18,15 @@
     <ClCompile Include="..\SharedFiles\src\DevicePoseCommandSender.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\SharedFiles\src\SharedDeviceMemory.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="DeviceInputCommandSender.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\SharedFiles\headers\DeviceTypes.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\SharedFiles\headers\IDevicePoseEventListener.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\SharedFiles\headers\openvr.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\SharedFiles\headers\SharedDeviceMemory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\SharedFiles\headers\DevicePoseCommandSender.h">

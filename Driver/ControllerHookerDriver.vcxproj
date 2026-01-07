@@ -155,17 +155,22 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\Driver\headers\DeviceProvider.h" />
-    <ClInclude Include="..\Driver\headers\globals.h" />
     <ClInclude Include="..\Driver\headers\HookManager.h" />
     <ClInclude Include="..\Driver\headers\LogManager.h" />
+    <ClInclude Include="headers\main.h" />
+    <ClInclude Include="headers\ObjectSchemas.h" />
+    <ClInclude Include="headers\ObjectTypeSchemaBaker.h" />
+    <ClInclude Include="headers\SharedDeviceMemoryDriver.h" />
     <ClInclude Include="headers\Utils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Driver\src\DeviceProvider.cpp" />
     <ClCompile Include="..\Driver\src\dllmain.cpp" />
-    <ClCompile Include="..\Driver\src\globals.cpp" />
     <ClCompile Include="..\Driver\src\HookManager.cpp" />
     <ClCompile Include="..\Driver\src\LogManager.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\ObjectTypeSchemaBaker.cpp" />
+    <ClCompile Include="src\SharedDeviceMemoryDriver.cpp" />
     <ClCompile Include="src\Utils.cpp" />
   </ItemGroup>
   <ItemGroup>

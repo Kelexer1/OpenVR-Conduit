@@ -1,8 +1,12 @@
 #include "DeviceProvider.h"
 
+#include <thread>
+
 #include "LogManager.h"
-#include "SharedDeviceMemory.h"
-#include "globals.h"
+#include "SharedDeviceMemoryDriver.h"
+#include "main.h"
+
+std::thread mainThread;
 
 vr::EVRInitError DeviceProvider::Init(vr::IVRDriverContext* pDriverContext) {
 	vr::InitServerDriverContext(pDriverContext);
@@ -12,9 +16,13 @@ vr::EVRInitError DeviceProvider::Init(vr::IVRDriverContext* pDriverContext) {
 	HookManager::initializeHooks();
 	HookManager::setupHooks_IVRServerDriverHost((void*)vr::VRServerDriverHost());
 	HookManager::setupHooks_IVRDriverInput((void*)vr::VRDriverInput());
+	bool sharedMemoryInitializationResult = SharedDeviceMemoryDriver::getInstance().initialize();
 
-	bool sharedMemoryResult = sharedMemoryIO.initialize(true);
-	LogManager::log(LOG_INFO, "Shared memory initialization {0}", sharedMemoryResult ? "succeeded" : "failed");
+	LogManager::log(LOG_INFO, "Shared memory initialization {0}", sharedMemoryInitializationResult ? "succeeded" : "failed");
+
+	// Start main thread asyncronously
+	mainThread = std::thread([] { Main::getInstance().main(); });
+	mainThread.detach();
 
 	LogManager::log(LOG_INFO, "Initialized Device Provider");
 
@@ -22,6 +30,10 @@ vr::EVRInitError DeviceProvider::Init(vr::IVRDriverContext* pDriverContext) {
 }
 
 void DeviceProvider::Cleanup() {
+	if (mainThread.joinable()) {
+		mainThread.join();
+	}
+
 	MH_DisableHook(MH_ALL_HOOKS);
 	MH_Uninitialize();
 }

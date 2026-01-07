@@ -8,6 +8,16 @@ struct DeviceVector3 {
 	double v[3] = { 0.0, 0.0, 0.0 };
 };
 
+/// struct HmdVector4_t
+struct DeviceVector4 {
+	double v[4] = { 0.0, 0.0, 0.0, 0.0 };
+};
+
+/// struct HmdMatrix34_t
+struct DeviceMatrix34 {
+	double m[3][4];
+};
+
 /// struct HmdQuaternion_t
 struct DeviceQuaternion {
 	double w = 1.0;
@@ -59,3 +69,23 @@ struct DevicePose {
 	bool deviceIsConnected = false;
 };
 
+/// enum EVRSkeletalMotionRange
+enum SkeletalMotionRange {
+	VRSkeletalMotionRange_WithController = 0,
+	VRSkeletalMotionRange_WithoutController = 1,
+};
+
+/// struct VRBoneTransform_t
+struct BoneTransform {
+	DeviceVector4 position;
+	DeviceQuaternion orientation;
+};
+
+struct EyeTrackingData {
+	bool active;
+	bool valid;
+	bool tracked;
+
+	DeviceVector3 gazeOrigin;
+	DeviceVector3 gazeTarget;
+};
