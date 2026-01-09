@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\Shared Memory">
+      <UniqueIdentifier>{9279dcf4-d4ef-4f9e-b8ad-50891283b36b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Shared Memory">
+      <UniqueIdentifier>{1d81ff8a-937a-462b-9c80-8b8e7cf13555}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Driver\headers\DeviceProvider.h">
@@ -27,16 +33,19 @@
     <ClInclude Include="headers\Utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="headers\ObjectSchemas.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="headers\ObjectTypeSchemaBaker.h">
+    <ClInclude Include="headers\main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="headers\SharedDeviceMemoryDriver.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Shared Memory</Filter>
     </ClInclude>
-    <ClInclude Include="headers\main.h">
+    <ClInclude Include="headers\ObjectTypeSchemaBaker.h">
+      <Filter>Header Files\Shared Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\ObjectSchemas.h">
+      <Filter>Header Files\Shared Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\DeviceStateModel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -56,13 +65,16 @@
     <ClCompile Include="src\Utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ObjectTypeSchemaBaker.cpp">
+    <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ObjectTypeSchemaBaker.cpp">
+      <Filter>Source Files\Shared Memory</Filter>
     </ClCompile>
     <ClCompile Include="src\SharedDeviceMemoryDriver.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Shared Memory</Filter>
     </ClCompile>
-    <ClCompile Include="src\main.cpp">
+    <ClCompile Include="src\DeviceStateModel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

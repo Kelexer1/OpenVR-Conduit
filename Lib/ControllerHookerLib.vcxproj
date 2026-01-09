@@ -163,7 +163,6 @@
   <ItemGroup>
     <ClInclude Include="..\SharedFiles\headers\DevicePoseCommandSender.h" />
     <ClInclude Include="..\SharedFiles\headers\IDevicePoseEventListener.h" />
-    <ClInclude Include="..\SharedFiles\headers\openvr.h" />
     <ClInclude Include="DeviceInputCommandSender.h" />
     <ClInclude Include="IDeviceInputEventListener.h" />
   </ItemGroup>

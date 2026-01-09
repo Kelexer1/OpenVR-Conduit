@@ -31,6 +31,10 @@ enum VTableOffsets_IVRDriverInput {
 	Offset_UpdateEyeTrackingComponent = 10	// IVRDriverInput->UpdateEyeTrackingComponent()
 };
 
+enum VTableOffsets_IVRProperties {
+	Offset_TrackedDeviceToPropertyContainer = 3
+};
+
 /**
  * @brief Manages OpenVR method hooks throughout the driver lifespan
  */
@@ -42,16 +46,22 @@ public:
 	static void initializeHooks();
 
 	/**
-	 * @brief Initializes MinHook and hooks to all required methods under IVRServerDriverHost
+	 * @brief Hooks to all required methods under IVRServerDriverHost
 	 * @param host A pointer to the IVRServerDriverHost interface
 	 */
 	static void setupHooks_IVRServerDriverHost(void* host);
 
 	/**
-	 * @brief Initializes MinHook and hooks to all required methods under IVRDriverInput
+	 * @brief Hooks to all required methods under IVRDriverInput
 	 * @param input A pointer to the IVRDriverInput interface
 	 */
 	static void setupHooks_IVRDriverInput(void* input);
+
+	/**
+	 * @brief Hooks to all required methods under IVRProperties
+	 * @param properties A pointer to the IVRProperties interface
+	 */
+	static void setupHooks_IVRProperties(void* properties);
 
 	/**
 	 * @brief Gracefully shuts down MinHook in the event of an error

@@ -3,8 +3,7 @@
 #include "vrmath.h"
 
 #include "LogManager.h"
-#include "globals.h"
-#include "SharedDeviceMemory.h"
+#include "DeviceStateModel.h"
 #include "Utils.h"
 
 // Default initializations, will be overriden later
@@ -47,47 +46,36 @@ static _CreateEyeTrackingComponent originalCreateEyeTrackingComponent = nullptr;
 typedef void(*_UpdateEyeTrackingComponent)(void* _this, vr::VRInputComponentHandle_t ulComponent, const vr::VREyeTrackingData_t* pEyeTrackingData_t, double fTimeOffset);
 static _UpdateEyeTrackingComponent originalUpdateEyeTrackingComponent = nullptr;
 
+typedef vr::PropertyContainerHandle_t(*_TrackedDeviceToPropertyContainer)(void* _this, vr::TrackedDeviceIndex_t nDevice);
+static _TrackedDeviceToPropertyContainer originalTrackedDeviceToPropertyContainer = nullptr;
+
 void overrideTrackedDevicePoseUpdated(void* _this, uint32_t unWhichDevice, const vr::DriverPose_t& newPose, uint32_t unPoseStructSize) {
-	vr::DriverPose_t overridePose = newPose;
-
-	// Only work with controllers
-	if (getDeviceClass(unWhichDevice) == vr::TrackedDeviceClass_Controller) {
-		// Update natural pose
-		bool active;
-		if (sharedMemoryIO.isControllerSlotActive(unWhichDevice, active) && active) {
-			sharedMemoryIO.writeNaturalPose(unWhichDevice, FromDriverPose(newPose));
-		}
-
-		// Check if using ping-pong communication
-		bool usePingPong;
-		if (sharedMemoryIO.readUsePingPong(unWhichDevice, usePingPong) && usePingPong) {
-			overridePose = ToDriverPose(sharedMemoryIO.pingPong(unWhichDevice));
-		} else {
-			// Check if using a custom pose
-			bool useOverridePose;
-			if (sharedMemoryIO.readUseCustomPose(unWhichDevice, useOverridePose) && useOverridePose) {
-				// Static read
-				DevicePose customPose;
-				if (sharedMemoryIO.readOverridenPose(unWhichDevice, customPose)) {
-					overridePose = ToDriverPose(customPose);
-				}
-			}
-		}
+	// Modify shared memory
+	DevicePoseSerialized* posePointer = DeviceStateModel::getInstance().getDevicePose(unWhichDevice);
+	if (posePointer != nullptr) {
+		posePointer->pose = FromDriverPose(newPose);
+		DeviceStateModel::getInstance().setDevicePoseChanged(unWhichDevice);
 	}
-
+	
 	// Call the original TrackedDevicePoseUpdated()
 	if (originalTrackedDevicePoseUpdated) {
-		(originalTrackedDevicePoseUpdated)(_this, unWhichDevice, overridePose, unPoseStructSize);
+		(originalTrackedDevicePoseUpdated)(_this, unWhichDevice, newPose, unPoseStructSize);
 	}
 }
 
 void overrideCreateBooleanComponent(void* _this, vr::PropertyContainerHandle_t ulContainer, const char* pchName, vr::VRInputComponentHandle_t* pHandle) {
+	// Register component to model
+	DeviceStateModel::getInstance().addDevicePath(pchName);
+	uint32_t deviceIndex = DeviceStateModel::getInstance().getDeviceIndexFromPropertyContainer(ulContainer);
+	
+	if (deviceIndex != static_cast<uint32_t>(-1)) {
+		DeviceStateModel::getInstance().addBooleanInput(deviceIndex, pchName);
+	}
+
 	// Call the original CreateBooleanComponent()
 	if (originalCreateBooleanComponent) {
 		(originalCreateBooleanComponent)(_this, ulContainer, pchName, pHandle);
 	}
-
-	LogManager::log(LOG_DEBUG, "CreateBooleanComponent called for component: {}", pchName);
 }
 
 void overrideUpdateBooleanComponent(void* _this, vr::VRInputComponentHandle_t ulComponent, bool bNewValue, double fTimeOffset) {
@@ -95,11 +83,17 @@ void overrideUpdateBooleanComponent(void* _this, vr::VRInputComponentHandle_t ul
 	if (originalUpdateBooleanComponent) {
 		(originalUpdateBooleanComponent)(_this, ulComponent, bNewValue, fTimeOffset);
 	}
-
-	LogManager::log(LOG_DEBUG, "UpdateBooleanComponent called for component handle: {}", ulComponent);
 }
 
 void overrideCreateScalarComponent(void* _this, vr::PropertyContainerHandle_t ulContainer, const char* pchName, vr::VRInputComponentHandle_t* pHandle, vr::EVRScalarType eType, vr::EVRScalarUnits eUnits) {
+	// Register component to model
+	DeviceStateModel::getInstance().addDevicePath(pchName);
+	uint32_t deviceIndex = DeviceStateModel::getInstance().getDeviceIndexFromPropertyContainer(ulContainer);
+
+	if (deviceIndex != static_cast<uint32_t>(-1)) {
+		DeviceStateModel::getInstance().addScalarInput(deviceIndex, pchName);
+	}
+	
 	// Call the original CreateScalarComponent()
 	if (originalCreateScalarComponent) {
 		(originalCreateScalarComponent)(_this, ulContainer, pchName, pHandle, eType, eUnits);
@@ -114,6 +108,9 @@ void overrideUpdateScalarComponent(void* _this, vr::VRInputComponentHandle_t ulC
 }
 
 void overrideCreateHapticComponent(void* _this, vr::PropertyContainerHandle_t ulContainer, const char* pchName, vr::VRInputComponentHandle_t* pHandle) {
+	// We dont actually store haptic inputs in the model since they can be managed from applications
+	// the hook is just here if its needed in the future, and for consistency
+	
 	// Call the original CreateHapticComponent()
 	if (originalCreateHapticComponent) {
 		(originalCreateHapticComponent)(_this, ulContainer, pchName, pHandle);
@@ -121,6 +118,14 @@ void overrideCreateHapticComponent(void* _this, vr::PropertyContainerHandle_t ul
 }
 
 void overrideCreateSkeletonComponent(void* _this, vr::PropertyContainerHandle_t ulContainer, const char* pchName, const char* pchSkeletonPath, const char* pchBasePosePath, vr::EVRSkeletalTrackingLevel eSkeletalTrackingLevel, const vr::VRBoneTransform_t* pGripLimitTransforms, uint32_t unGripLimitTransformCount, vr::VRInputComponentHandle_t* pHandle) {
+	// Register component to model
+	DeviceStateModel::getInstance().addDevicePath(pchName);
+	uint32_t deviceIndex = DeviceStateModel::getInstance().getDeviceIndexFromPropertyContainer(ulContainer);
+
+	if (deviceIndex != static_cast<uint32_t>(-1)) {
+		DeviceStateModel::getInstance().addSkeletonInput(deviceIndex, pchName);
+	}
+	
 	// Call the original CreateSkeletonComponent()
 	if (originalCreateSkeletonComponent) {
 		(originalCreateSkeletonComponent)(_this, ulContainer, pchName, pchSkeletonPath, pchBasePosePath, eSkeletalTrackingLevel, pGripLimitTransforms, unGripLimitTransformCount, pHandle);
@@ -135,6 +140,14 @@ void overrideUpdateSkeletonComponent(void* _this, vr::VRInputComponentHandle_t u
 }
 
 void overrideCreatePoseComponent(void* _this, vr::PropertyContainerHandle_t ulContainer, const char* pchName, vr::VRInputComponentHandle_t* pHandle) {
+	// Register component to model
+	DeviceStateModel::getInstance().addDevicePath(pchName);
+	uint32_t deviceIndex = DeviceStateModel::getInstance().getDeviceIndexFromPropertyContainer(ulContainer);
+
+	if (deviceIndex != static_cast<uint32_t>(-1)) {
+		DeviceStateModel::getInstance().addPoseInput(deviceIndex, pchName);
+	}
+	
 	// Call the original CreatePoseComponent()
 	if (originalCreatePoseComponent) {
 		(originalCreatePoseComponent)(_this, ulContainer, pchName, pHandle);
@@ -149,6 +162,14 @@ void overrideUpdatePoseComponent(void* _this, vr::VRInputComponentHandle_t ulCom
 }
 
 void overrideCreateEyeTrackingComponent(void* _this, vr::PropertyContainerHandle_t ulContainer, const char* pchName, vr::VRInputComponentHandle_t* pHandle) {
+	// Register component to model
+	DeviceStateModel::getInstance().addDevicePath(pchName);
+	uint32_t deviceIndex = DeviceStateModel::getInstance().getDeviceIndexFromPropertyContainer(ulContainer);
+
+	if (deviceIndex != static_cast<uint32_t>(-1)) {
+		DeviceStateModel::getInstance().addEyeTrackingInput(deviceIndex, pchName);
+	}
+	
 	// Call the original CreateEyeTrackingComponent()
 	if (originalCreateEyeTrackingComponent) {
 		(originalCreateEyeTrackingComponent)(_this, ulContainer, pchName, pHandle);
@@ -159,6 +180,18 @@ void overrideUpdateEyeTrackingComponent(void* _this, vr::VRInputComponentHandle_
 	// Call the original UpdateEyeTrackingComponent()
 	if (originalUpdateEyeTrackingComponent) {
 		(originalUpdateEyeTrackingComponent)(_this, ulComponent, pEyeTrackingData_t, fTimeOffset);
+	}
+}
+
+vr::PropertyContainerHandle_t overrideTrackedDeviceToPropertyContainer(void* _this, vr::TrackedDeviceIndex_t nDevice) {
+	// Call the original TrackedDeviceToPropertyContainer()
+	if (originalTrackedDeviceToPropertyContainer) {
+		vr::PropertyContainerHandle_t result = (originalTrackedDeviceToPropertyContainer)(_this, nDevice);
+
+		// Save mapping
+		DeviceStateModel::getInstance().addDeviceIndexToContainerMapping(nDevice, result);
+
+		return result;
 	}
 }
 
@@ -215,6 +248,23 @@ void HookManager::setupHooks_IVRDriverInput(void* input) {
 	LogManager::log(LOG_INFO, "All IVRDriverInput methods hooked successfully");
 }
 
+void HookManager::setupHooks_IVRProperties(void* properties) {
+	if (!properties) {
+		LogManager::log(LOG_ERROR, "IVRProperties is not initialized");
+		return;
+	}
+
+	void** vtable = *(void***)properties;
+	if (!vtable) {
+		LogManager::log(LOG_ERROR, "Failed to get vtable from IVRProperties");
+		return;
+	}
+
+	createHook(vtable[Offset_TrackedDeviceToPropertyContainer], &overrideTrackedDeviceToPropertyContainer, reinterpret_cast<void**>(&originalTrackedDeviceToPropertyContainer), "TrackedDeviceToPropertyContainer");
+
+	LogManager::log(LOG_INFO, "All IVRProperties methods hooked successfully");
+}
+
 void HookManager::shutdown(std::string reason) {
 	MH_Uninitialize();
 
@@ -258,15 +308,14 @@ void HookManager::dumpVTableFromHost(void* host) {
 
 void HookManager::createHook(void* targetFunction, void* detourFunction, void** originalFunction, const std::string& name) {
 	// Create hook
-	if (MH_CreateHook(targetFunction, detourFunction, originalFunction)
-		!= MH_OK) {
+	if (MH_CreateHook(targetFunction, detourFunction, originalFunction) != MH_OK) {
 		LogManager::log(LOG_ERROR, "MinHook hook creation failed for {}", name);
 		return;
 	}
 
 	// Enable hook
 	if (MH_EnableHook(targetFunction) != MH_OK) {
-		LogManager::log(LOG_ERROR, "MinHook hook enable failed ({})", name);
+		LogManager::log(LOG_ERROR, "MinHook hook enable failed for {}", name);
 		return;
 	}
 }

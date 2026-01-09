@@ -24,9 +24,12 @@ enum FieldType : uint8_t {
 	Field_EyeTrackingData
 };
 
+#pragma pack(push, 1)
+
 struct ObjectSchemaEntry {
 	ObjectType typeID;
 	uint32_t size;
+	uint8_t fieldCount;
 	FieldSchemaEntry fields[];
 };
 
@@ -38,38 +41,26 @@ struct FieldSchemaEntry {
 	uint32_t size;
 };
 
-struct ObjectEntry {
-	uint32_t ID;
-	ObjectType type;
-
-	uint32_t deviceIndex;
-	uint32_t inputPathID;
-
-	std::atomic<uint64_t> version;
-
-	bool valid;
-};
-
 struct DevicePoseSerialized {
 	DevicePose pose;
 	DevicePose overwrittenPose;
 };
 
-struct InputBooleanSerialized {
+struct DeviceInputBooleanSerialized {
 	bool value;
 	bool overwrittenValue;
 	double timeOffset;
 	double overwrittenTimeOffset;
 };
 
-struct InputScalarSerialized {
+struct DeviceInputScalarSerialized {
 	double value;
 	double overwrittenValue;
 	double timeOffset;
 	double overwrittenTimeOffset;
 };
 
-struct InputSkeletonSerialized {
+struct DeviceInputSkeletonSerialized {
 	SkeletalMotionRange motionRange;
 	BoneTransform bones[31];
 	SkeletalMotionRange overwrittenMotionRange;
@@ -78,16 +69,18 @@ struct InputSkeletonSerialized {
 	double overwrittenTimeOffset;
 };
 
-struct InputPoseSerialized {
+struct DeviceInputPoseSerialized {
 	DeviceMatrix34 poseOffset;
 	DeviceMatrix34 overwrittenPoseOffset;
 	double timeOffset;
 	double overwrittenTimeOffset;
 };
 
-struct InputEyeTrackingSerialized {
+struct DeviceInputEyeTrackingSerialized {
 	EyeTrackingData eyeTrackingData;
 	EyeTrackingData overwrittenEyeTrackingData;
 	double timeOffset;
 	double overwrittenTimeOffset;
 };
+
+#pragma pack(pop)

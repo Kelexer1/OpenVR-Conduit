@@ -26,9 +26,6 @@
     <ClInclude Include="..\SharedFiles\headers\IDevicePoseEventListener.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\SharedFiles\headers\openvr.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\SharedFiles\headers\DevicePoseCommandSender.h">
       <Filter>Header Files</Filter>
     </ClInclude>
