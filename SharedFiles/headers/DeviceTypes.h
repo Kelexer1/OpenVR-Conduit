@@ -89,3 +89,29 @@ struct EyeTrackingData {
 	DeviceVector3 gazeOrigin;
 	DeviceVector3 gazeTarget;
 };
+
+struct BooleanInput {
+	bool value;
+	double timeOffset;
+};
+
+struct ScalarInput {
+	double value;
+	double timeOffset;
+};
+
+struct SkeletonInput {
+	SkeletalMotionRange motionRange;
+	BoneTransform boneTransforms[31];
+	uint32_t boneTransformCount;
+};
+
+struct PoseInput {
+	DeviceMatrix34 poseOffset;
+	double timeOffset;
+};
+
+struct EyeTrackingInput {
+	EyeTrackingData eyeTrackingData;
+	double timeOffset;
+};

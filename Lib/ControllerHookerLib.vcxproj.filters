@@ -18,21 +18,21 @@
     <ClCompile Include="..\SharedFiles\src\DevicePoseCommandSender.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DeviceInputCommandSender.cpp">
+    <ClCompile Include="SharedDeviceMemoryClient.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DeviceStateModelClient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\SharedFiles\headers\IDevicePoseEventListener.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\SharedFiles\headers\DevicePoseCommandSender.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DeviceInputCommandSender.h">
+    <ClInclude Include="SharedDeviceMemoryClient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="IDeviceInputEventListener.h">
+    <ClInclude Include="DeviceStateModelClient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

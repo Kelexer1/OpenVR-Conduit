@@ -1,7 +1,0 @@
-{
-	"alwaysActivate": false,
-	"name" : "controllerhooker",
-	"directory" : "",
-	"resourceOnly" : false,
-	"hmd_presence" : []
-}

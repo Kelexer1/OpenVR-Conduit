@@ -16,8 +16,16 @@ vr::EVRInitError DeviceProvider::Init(vr::IVRDriverContext* pDriverContext) {
 	HookManager::initializeHooks();
 	HookManager::setupHooks_IVRServerDriverHost((void*)vr::VRServerDriverHost());
 	HookManager::setupHooks_IVRDriverInput((void*)vr::VRDriverInput());
-	HookManager::setupHooks_IVRProperties((void*)vr::VRProperties());
-	ObjectTypeSchemaBaker::bakeSchemas();
+
+	vr::IVRProperties* pProperties = nullptr;
+	vr::EVRInitError eError;
+	pProperties = (vr::IVRProperties*)vr::VRDriverContext()->GetGenericInterface(vr::IVRProperties_Version, &eError);
+	if (!pProperties) {
+		LogManager::log(LOG_ERROR, "Failed to get IVRProperties interface: {}", static_cast<int>(eError));
+		return eError;
+	}
+	HookManager::setupHooks_IVRProperties((void*)pProperties);
+
 	bool sharedMemoryInitializationResult = SharedDeviceMemoryDriver::getInstance().initialize();
 
 	LogManager::log(LOG_INFO, "Shared memory initialization {0}", sharedMemoryInitializationResult ? "succeeded" : "failed");

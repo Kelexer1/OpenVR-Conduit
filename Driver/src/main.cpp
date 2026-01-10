@@ -1,12 +1,33 @@
 #include "main.h"
 
-Main Main::getInstance() {
-	static Main singleton;
-	return singleton;
+const double POLL_RATE = 256.0;
+
+Main& Main::getInstance() {
+	static Main instance;
+	return instance;
 }
 
-void main() {
+void Main::main() {
+	double POLL_PERIOD_MICROSECONDS = 1000000.0 / POLL_RATE;
+
 	while (true) {
-		// run all update checks from client etc.
+		SharedDeviceMemoryDriver::getInstance().pollForClientUpdates();
+		this->pollEvents();
+
+		std::this_thread::sleep_for(std::chrono::microseconds((int)POLL_PERIOD_MICROSECONDS));
+	}
+}
+
+void Main::pollEvents() {
+	vr::VREvent_t event;
+	if (vr::VRServerDriverHost()->PollNextEvent(&event, sizeof(vr::VREvent_t))) {
+		switch (event.eventType) {
+		case vr::VREvent_TrackedDeviceActivated:
+			break;
+
+		case vr::VREvent_TrackedDeviceDeactivated:
+			DeviceStateModel::getInstance().cleanDeviceIndexAssociations(event.trackedDeviceIndex);
+			break;
+		}
 	}
 }

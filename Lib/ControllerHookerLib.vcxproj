@@ -158,13 +158,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\SharedFiles\src\DevicePoseCommandSender.cpp" />
-    <ClCompile Include="DeviceInputCommandSender.cpp" />
+    <ClCompile Include="DeviceStateModelClient.cpp" />
+    <ClCompile Include="SharedDeviceMemoryClient.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\SharedFiles\headers\DevicePoseCommandSender.h" />
-    <ClInclude Include="..\SharedFiles\headers\IDevicePoseEventListener.h" />
-    <ClInclude Include="DeviceInputCommandSender.h" />
-    <ClInclude Include="IDeviceInputEventListener.h" />
+    <ClInclude Include="DeviceStateModelClient.h" />
+    <ClInclude Include="SharedDeviceMemoryClient.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

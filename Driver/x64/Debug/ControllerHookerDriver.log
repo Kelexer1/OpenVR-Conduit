@@ -1,45 +1,4 @@
 ﻿C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(548,5): warning MSB8028: The intermediate directory (x64\Debug\) contains files shared from another project (ControllerHookerDriver.vcxproj, ControllerHookerDriver.vcxproj).  This can lead to incorrect clean and rebuild behavior.
-  HookManager.cpp
-C:\Users\Thomas\Desktop\OpenVR-ControllerHooker\Driver\headers\vrmath.h(206,12): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-  (compiling source file 'src/HookManager.cpp')
-  
-C:\Users\Thomas\Desktop\OpenVR-ControllerHooker\Driver\headers\vrmath.h(207,13): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-  (compiling source file 'src/HookManager.cpp')
-  
-C:\Users\Thomas\Desktop\OpenVR-ControllerHooker\Driver\headers\vrmath.h(208,13): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-  (compiling source file 'src/HookManager.cpp')
-  
-C:\Users\Thomas\Desktop\OpenVR-ControllerHooker\Driver\headers\vrmath.h(209,13): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-  (compiling source file 'src/HookManager.cpp')
-  
-C:\Users\Thomas\Desktop\OpenVR-ControllerHooker\Driver\headers\vrmath.h(210,13): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-  (compiling source file 'src/HookManager.cpp')
-  
-C:\Users\Thomas\Desktop\OpenVR-ControllerHooker\Driver\headers\vrmath.h(211,13): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-  (compiling source file 'src/HookManager.cpp')
-  
-C:\Users\Thomas\Desktop\OpenVR-ControllerHooker\Driver\headers\vrmath.h(212,13): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-  (compiling source file 'src/HookManager.cpp')
-  
-C:\Users\Thomas\Desktop\OpenVR-ControllerHooker\Driver\headers\vrmath.h(213,13): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-  (compiling source file 'src/HookManager.cpp')
-  
-C:\Users\Thomas\Desktop\OpenVR-ControllerHooker\Driver\headers\vrmath.h(214,13): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-  (compiling source file 'src/HookManager.cpp')
-  
-C:\Users\Thomas\Desktop\OpenVR-ControllerHooker\Driver\headers\vrmath.h(215,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-  (compiling source file 'src/HookManager.cpp')
-  
-C:\Users\Thomas\Desktop\OpenVR-ControllerHooker\Driver\headers\vrmath.h(216,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-  (compiling source file 'src/HookManager.cpp')
-  
-C:\Users\Thomas\Desktop\OpenVR-ControllerHooker\Driver\headers\vrmath.h(217,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-  (compiling source file 'src/HookManager.cpp')
-  
-C:\Users\Thomas\Desktop\OpenVR-ControllerHooker\Driver\src\HookManager.cpp(57,22): error C2039: 'isControllerSlotActive': is not a member of 'SharedDeviceMemoryIO'
-      C:\Users\Thomas\Desktop\OpenVR-ControllerHooker\SharedFiles\headers\SharedDeviceMemory.h(51,7):
-      see declaration of 'SharedDeviceMemoryIO'
-  
-  LogManager.cpp
-  Utils.cpp
-  Generating Code...
+C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(534,5): warning MSB8004: Output Directory does not end with a trailing slash.  This build instance will add the slash as it is required to allow proper evaluation of the Output Directory.
+C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(548,5): warning MSB8028: The intermediate directory (x64\Debug\) contains files shared from another project (ControllerHookerLib.vcxproj).  This can lead to incorrect clean and rebuild behavior.
+  ControllerHookerDriver.vcxproj -> C:\Users\Thomas\Desktop\OpenVR-Conduit\Build\ConduitDriver\Debug\bin\win64\driver_conduit.dll
