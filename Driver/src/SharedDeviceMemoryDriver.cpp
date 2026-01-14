@@ -77,21 +77,19 @@ void SharedDeviceMemoryDriver::pollForClientUpdates() {
 		ClientCommandHeader* commandHeader;
 		do {
 			// Read command header
-			commandHeader = reinterpret_cast<ClientCommandHeader*>(static_cast<uint8_t*>(this->sharedMemory) + this->clientDriverLaneStart + this->clientDriverLaneReadOffset);
-			this->clientDriverLaneReadOffset += sizeof(ClientCommandHeader);
+			auto headerBuf = this->readPacketFromClientDriverLane(sizeof(ClientCommandHeader));
+			commandHeader = reinterpret_cast<ClientCommandHeader*>(headerBuf.get());
 
 			uint32_t deviceIndex = commandHeader->deviceIndex;
 
 			DeviceStateModel model = DeviceStateModel::getInstance();
 
-			switch (commandHeader->commandType) {
+			switch (commandHeader->type) {
 				case Command_SetUseOverridenStateDevicePose: {
-					CommandParams_SetUseOverridenStateDevicePose* params = reinterpret_cast<CommandParams_SetUseOverridenStateDevicePose*>(
-						static_cast<uint8_t*>(this->sharedMemory) + this->clientDriverLaneStart + this->clientDriverLaneReadOffset
-						);
-					this->clientDriverLaneReadOffset += sizeof(CommandParams_SetUseOverridenStateDevicePose);
+					auto paramsBuf = this->readPacketFromClientDriverLane(sizeof(CommandParams_SetUseOverridenStateDevicePose));
+					CommandParams_SetUseOverridenStateDevicePose* params = reinterpret_cast<CommandParams_SetUseOverridenStateDevicePose*>(paramsBuf.get());
 
-					DriverDevicePoseSerialized* pose = model.getDevicePose(deviceIndex);
+					ModelDevicePoseSerialized* pose = model.getDevicePose(deviceIndex);
 					if (pose) {
 						pose->useOverridenState = params->useOverridenState;
 					}
@@ -99,50 +97,46 @@ void SharedDeviceMemoryDriver::pollForClientUpdates() {
 					break;
 				}
 				case Command_SetOverridenStateDevicePose: {
-					CommandParams_SetOverridenStateDevicePose* params = reinterpret_cast<CommandParams_SetOverridenStateDevicePose*>(
-						static_cast<uint8_t*>(this->sharedMemory) + this->clientDriverLaneStart + this->clientDriverLaneReadOffset
-						);
-					this->clientDriverLaneReadOffset += sizeof(CommandParams_SetOverridenStateDevicePose);
+					auto paramsBuf = this->readPacketFromClientDriverLane(sizeof(CommandParams_SetOverridenStateDevicePose));
+					CommandParams_SetOverridenStateDevicePose* params = reinterpret_cast<CommandParams_SetOverridenStateDevicePose*>(paramsBuf.get());
 
-					DriverDevicePoseSerialized* pose = model.getDevicePose(deviceIndex);
+					ModelDevicePoseSerialized* pose = model.getDevicePose(deviceIndex);
 					if (pose) {
-						pose->data.overwrittenPose = params->overridenPose.overwrittenPose;
+						pose->data.overwrittenPose = params->overridenPose;
 						model.setDevicePoseChanged(deviceIndex);
 					}
 
 					break;
 				}
 				case Command_SetUseOverridenStateDeviceInput: {
-					CommandParams_SetUseOverridenStateDeviceInput* params = reinterpret_cast<CommandParams_SetUseOverridenStateDeviceInput*>(
-						static_cast<uint8_t*>(this->sharedMemory) + this->clientDriverLaneStart + this->clientDriverLaneReadOffset
-						);
-					this->clientDriverLaneReadOffset += sizeof(CommandParams_SetUseOverridenStateDeviceInput);
+					auto paramsBuf = this->readPacketFromClientDriverLane(sizeof(CommandParams_SetUseOverridenStateDeviceInput));
+					CommandParams_SetUseOverridenStateDeviceInput* params = reinterpret_cast<CommandParams_SetUseOverridenStateDeviceInput*>(paramsBuf.get());
 
-					DriverDeviceInputBooleanSerialized* inputBoolean = model.getBooleanInput(deviceIndex, params->pathID);
+					ModelDeviceInputBooleanSerialized* inputBoolean = model.getBooleanInput(deviceIndex, params->pathID);
 					if (inputBoolean) {
 						inputBoolean->useOverridenState = params->useOverridenState;
 						model.setInputBooleanChanged(deviceIndex, params->pathID);
 					}
 
-					DriverDeviceInputScalarSerialized* inputScalar = model.getScalarInput(deviceIndex, params->pathID);
+					ModelDeviceInputScalarSerialized* inputScalar = model.getScalarInput(deviceIndex, params->pathID);
 					if (inputScalar) {
 						inputScalar->useOverridenState = params->useOverridenState;
 						model.setInputScalarChanged(deviceIndex, params->pathID);
 					}
 
-					DriverDeviceInputSkeletonSerialized* inputSkeleton = model.getSkeletonInput(deviceIndex, params->pathID);
+					ModelDeviceInputSkeletonSerialized* inputSkeleton = model.getSkeletonInput(deviceIndex, params->pathID);
 					if (inputSkeleton) {
 						inputSkeleton->useOverridenState = params->useOverridenState;
 						model.setInputSkeletonChanged(deviceIndex, params->pathID);
 					}
 
-					DriverDeviceInputPoseSerialized* inputPose = model.getPoseInput(deviceIndex, params->pathID);
+					ModelDeviceInputPoseSerialized* inputPose = model.getPoseInput(deviceIndex, params->pathID);
 					if (inputPose) {
 						inputPose->useOverridenState = params->useOverridenState;
 						model.setInputPoseChanged(deviceIndex, params->pathID);
 					}
 
-					DriverDeviceInputEyeTrackingSerialized* inputEyeTracking = model.getEyeTrackingInput(deviceIndex, params->pathID);
+					ModelDeviceInputEyeTrackingSerialized* inputEyeTracking = model.getEyeTrackingInput(deviceIndex, params->pathID);
 					if (inputEyeTracking) {
 						inputEyeTracking->useOverridenState = params->useOverridenState;
 						model.setInputEyeTrackingChanged(deviceIndex, params->pathID);
@@ -151,12 +145,10 @@ void SharedDeviceMemoryDriver::pollForClientUpdates() {
 					break;
 				}
 				case Command_SetOverridenStateDeviceInputBoolean: {
-					CommandParams_SetOverridenStateDeviceInputBoolean* params = reinterpret_cast<CommandParams_SetOverridenStateDeviceInputBoolean*>(
-						static_cast<uint8_t*>(this->sharedMemory) + this->clientDriverLaneStart + this->clientDriverLaneReadOffset
-						);
-					this->clientDriverLaneReadOffset += sizeof(CommandParams_SetOverridenStateDeviceInputBoolean);
+					auto paramsBuf = this->readPacketFromClientDriverLane(sizeof(CommandParams_SetOverridenStateDeviceInputBoolean));
+					CommandParams_SetOverridenStateDeviceInputBoolean* params = reinterpret_cast<CommandParams_SetOverridenStateDeviceInputBoolean*>(paramsBuf.get());
 
-					DriverDeviceInputBooleanSerialized* input = model.getBooleanInput(deviceIndex, params->pathID);
+					ModelDeviceInputBooleanSerialized* input = model.getBooleanInput(deviceIndex, params->pathID);
 					if (input) {
 						input->data.overwrittenValue = params->overridenValue;
 					}
@@ -164,12 +156,10 @@ void SharedDeviceMemoryDriver::pollForClientUpdates() {
 					break;
 				}
 				case Command_SetOverridenStateDeviceInputScalar: {
-					CommandParams_SetOverridenStateDeviceInputScalar* params = reinterpret_cast<CommandParams_SetOverridenStateDeviceInputScalar*>(
-						static_cast<uint8_t*>(this->sharedMemory) + this->clientDriverLaneStart + this->clientDriverLaneReadOffset
-						);
-					this->clientDriverLaneReadOffset += sizeof(CommandParams_SetOverridenStateDeviceInputScalar);
+					auto paramsBuf = this->readPacketFromClientDriverLane(sizeof(CommandParams_SetOverridenStateDeviceInputScalar));
+					CommandParams_SetOverridenStateDeviceInputScalar* params = reinterpret_cast<CommandParams_SetOverridenStateDeviceInputScalar*>(paramsBuf.get());
 
-					DriverDeviceInputScalarSerialized* input = model.getScalarInput(deviceIndex, params->pathID);
+					ModelDeviceInputScalarSerialized* input = model.getScalarInput(deviceIndex, params->pathID);
 					if (input) {
 						input->data.overwrittenValue = params->overridenValue;
 					}
@@ -177,12 +167,10 @@ void SharedDeviceMemoryDriver::pollForClientUpdates() {
 					break;
 				}
 				case Command_SetOverridenStateDeviceInputSkeleton: {
-					CommandParams_SetOverridenStateDeviceInputSkeleton* params = reinterpret_cast<CommandParams_SetOverridenStateDeviceInputSkeleton*>(
-						static_cast<uint8_t*>(this->sharedMemory) + this->clientDriverLaneStart + this->clientDriverLaneReadOffset
-						);
-					this->clientDriverLaneReadOffset += sizeof(CommandParams_SetOverridenStateDeviceInputSkeleton);
+					auto paramsBuf = this->readPacketFromClientDriverLane(sizeof(CommandParams_SetOverridenStateDeviceInputSkeleton));
+					CommandParams_SetOverridenStateDeviceInputSkeleton* params = reinterpret_cast<CommandParams_SetOverridenStateDeviceInputSkeleton*>(paramsBuf.get());
 
-					DriverDeviceInputSkeletonSerialized* input = model.getSkeletonInput(deviceIndex, params->pathID);
+					ModelDeviceInputSkeletonSerialized* input = model.getSkeletonInput(deviceIndex, params->pathID);
 					if (input) {
 						input->data.overwrittenValue = params->overridenValue;
 					}
@@ -190,12 +178,10 @@ void SharedDeviceMemoryDriver::pollForClientUpdates() {
 					break;
 				}
 				case Command_SetOverridenStateDeviceInputPose: {
-					CommandParams_SetOverridenStateDeviceInputPose* params = reinterpret_cast<CommandParams_SetOverridenStateDeviceInputPose*>(
-						static_cast<uint8_t*>(this->sharedMemory) + this->clientDriverLaneStart + this->clientDriverLaneReadOffset
-						);
-					this->clientDriverLaneReadOffset += sizeof(CommandParams_SetOverridenStateDeviceInputPose);
+					auto paramsBuf = this->readPacketFromClientDriverLane(sizeof(CommandParams_SetOverridenStateDeviceInputPose));
+					CommandParams_SetOverridenStateDeviceInputPose* params = reinterpret_cast<CommandParams_SetOverridenStateDeviceInputPose*>(paramsBuf.get());
 
-					DriverDeviceInputPoseSerialized* input = model.getPoseInput(deviceIndex, params->pathID);
+					ModelDeviceInputPoseSerialized* input = model.getPoseInput(deviceIndex, params->pathID);
 					if (input) {
 						input->data.overwrittenValue = params->overridenValue;
 					}
@@ -203,12 +189,10 @@ void SharedDeviceMemoryDriver::pollForClientUpdates() {
 					break;
 				}
 				case Command_SetOverridenStateDeviceInputEyeTracking: {
-					CommandParams_SetOverridenStateDeviceInputEyeTracking* params = reinterpret_cast<CommandParams_SetOverridenStateDeviceInputEyeTracking*>(
-						static_cast<uint8_t*>(this->sharedMemory) + this->clientDriverLaneStart + this->clientDriverLaneReadOffset
-						);
-					this->clientDriverLaneReadOffset += sizeof(CommandParams_SetOverridenStateDeviceInputEyeTracking);
+					auto paramsBuf = this->readPacketFromClientDriverLane(sizeof(CommandParams_SetOverridenStateDeviceInputEyeTracking));
+					CommandParams_SetOverridenStateDeviceInputEyeTracking* params = reinterpret_cast<CommandParams_SetOverridenStateDeviceInputEyeTracking*>(paramsBuf.get());
 
-					DriverDeviceInputEyeTrackingSerialized* input = model.getEyeTrackingInput(deviceIndex, params->pathID);
+					ModelDeviceInputEyeTrackingSerialized* input = model.getEyeTrackingInput(deviceIndex, params->pathID);
 					if (input) {
 						input->data.overwrittenValue = params->overridenValue;
 					}
@@ -216,8 +200,6 @@ void SharedDeviceMemoryDriver::pollForClientUpdates() {
 					break;
 				}
 			}
-
-			// Read command param struct based on command type
 		} while (commandHeader->version < this->clientDriverReadCount);
 
 		this->clientDriverReadCount = headerPtr->clientDriverWriteCount;
@@ -245,6 +227,36 @@ void SharedDeviceMemoryDriver::writePacketToDriverClientLane(void* packet, uint3
 	}
 }
 
+std::unique_ptr<uint8_t[]> SharedDeviceMemoryDriver::readPacketFromClientDriverLane(uint32_t packetSize) {
+	if (packetSize == 0) {
+		return nullptr;
+	}
+
+	auto buffer = std::make_unique<uint8_t[]>(packetSize);
+	if (!buffer) {
+		return nullptr;
+	}
+
+	uint8_t* laneStart = static_cast<uint8_t*>(this->sharedMemory) + this->clientDriverLaneStart;
+	size_t currentOffset = this->clientDriverLaneReadOffset;
+
+	// Handle wrap around
+	if (currentOffset + packetSize > LANE_SIZE) {
+		size_t firstPartitionSize = LANE_SIZE - currentOffset;
+		memcpy(buffer.get(), laneStart + currentOffset, firstPartitionSize);
+
+		size_t secondPartitionSize = packetSize - firstPartitionSize;
+		memcpy(buffer.get() + firstPartitionSize, laneStart, secondPartitionSize);
+
+		this->clientDriverLaneReadOffset = secondPartitionSize;
+	} else {
+		memcpy(buffer.get(), laneStart + currentOffset, packetSize);
+		this->clientDriverLaneReadOffset = (currentOffset + packetSize) % LANE_SIZE;
+	}
+
+	return buffer;
+}
+
 void SharedDeviceMemoryDriver::syncPathTableToSharedMemory(uint32_t pathID, const std::string& path) {
 	PathTableEntry entry;
 	entry.ID = pathID;
@@ -266,6 +278,7 @@ void SharedDeviceMemoryDriver::syncDevicePoseUpdateToSharedMemory(DevicePoseSeri
 	entry.deviceIndex = deviceIndex;
 	entry.inputPathID = static_cast<uint32_t>(-1);
 	entry.version = this->pathTableWriteCount;
+	entry.valid = true;
 	this->writePacketToDriverClientLane((void*)&entry, sizeof(ObjectEntry));
 	this->writePacketToDriverClientLane((void*)packet, sizeof(DevicePoseSerialized));
 
@@ -280,6 +293,7 @@ void SharedDeviceMemoryDriver::syncDeviceInputBooleanUpdateToSharedMemory(Device
 	entry.deviceIndex = deviceIndex;
 	entry.inputPathID = pathID;
 	entry.version = this->pathTableWriteCount;
+	entry.valid = true;
 	this->writePacketToDriverClientLane((void*)&entry, sizeof(ObjectEntry));
 	this->writePacketToDriverClientLane((void*)packet, sizeof(DeviceInputBooleanSerialized));
 
@@ -294,6 +308,7 @@ void SharedDeviceMemoryDriver::syncDeviceInputScalarUpdateToSharedMemory(DeviceI
 	entry.deviceIndex = deviceIndex;
 	entry.inputPathID = pathID;
 	entry.version = this->pathTableWriteCount;
+	entry.valid = true;
 	this->writePacketToDriverClientLane((void*)&entry, sizeof(ObjectEntry));
 	this->writePacketToDriverClientLane((void*)packet, sizeof(DeviceInputScalarSerialized));
 
@@ -308,6 +323,7 @@ void SharedDeviceMemoryDriver::syncDeviceInputSkeletonUpdateToSharedMemory(Devic
 	entry.deviceIndex = deviceIndex;
 	entry.inputPathID = pathID;
 	entry.version = this->pathTableWriteCount;
+	entry.valid = true;
 	this->writePacketToDriverClientLane((void*)&entry, sizeof(ObjectEntry));
 	this->writePacketToDriverClientLane((void*)packet, sizeof(DeviceInputSkeletonSerialized));
 
@@ -322,6 +338,7 @@ void SharedDeviceMemoryDriver::syncDeviceInputPoseUpdateToSharedMemory(DeviceInp
 	entry.deviceIndex = deviceIndex;
 	entry.inputPathID = pathID;
 	entry.version = this->pathTableWriteCount;
+	entry.valid = true;
 	this->writePacketToDriverClientLane((void*)&entry, sizeof(ObjectEntry));
 	this->writePacketToDriverClientLane((void*)packet, sizeof(DeviceInputPoseSerialized));
 
@@ -336,6 +353,7 @@ void SharedDeviceMemoryDriver::syncDeviceInputEyeTrackingUpdateToSharedMemory(De
 	entry.deviceIndex = deviceIndex;
 	entry.inputPathID = pathID;
 	entry.version = this->pathTableWriteCount;
+	entry.valid = true;
 	this->writePacketToDriverClientLane((void*)&entry, sizeof(ObjectEntry));
 	this->writePacketToDriverClientLane((void*)packet, sizeof(DeviceInputEyeTrackingSerialized));
 

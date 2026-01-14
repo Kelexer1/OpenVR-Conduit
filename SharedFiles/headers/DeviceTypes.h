@@ -1,4 +1,5 @@
 #pragma once
+#include <stdint.h>
 
 /// These struct declarations are taken directly from the OpenVR SDK, for proper documentation on each structs members, 
 /// consult the OpenVR SDK documentation for the respective type

@@ -156,11 +156,9 @@
   <ItemGroup>
     <ClInclude Include="..\Driver\headers\DeviceProvider.h" />
     <ClInclude Include="..\Driver\headers\HookManager.h" />
-    <ClInclude Include="..\SharedFiles\headers\ObjectSchemas.h" />
     <ClInclude Include="headers\DeviceStateModelDriver.h" />
     <ClInclude Include="headers\LogManager.h" />
     <ClInclude Include="headers\main.h" />
-    <ClInclude Include="headers\ObjectSchemasDriver.h" />
     <ClInclude Include="headers\SharedDeviceMemoryDriver.h" />
     <ClInclude Include="headers\Utils.h" />
   </ItemGroup>

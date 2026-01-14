@@ -1,3 +1,0 @@
-﻿C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(534,5): warning MSB8004: Output Directory does not end with a trailing slash.  This build instance will add the slash as it is required to allow proper evaluation of the Output Directory.
-LINK : fatal error C1047: The object or library file 'C:\Users\Thomas\Desktop\OpenVR-ControllerHooker\SharedFiles\lib\libMinHook.x64Release.lib' was created by a different version of the compiler than other objects like 'x64\Release\DeviceProvider.obj'; rebuild all objects and libraries with the same compiler
-LINK : fatal error LNK1257: code generation failed

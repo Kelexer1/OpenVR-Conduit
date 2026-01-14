@@ -25,7 +25,7 @@ enum ClientCommandType {
 	Command_SetOverridenStateDeviceInputPose,
 	Command_SetOverridenStateDeviceInputEyeTracking
 };
- 
+
 #pragma pack(push, 1)
 
 struct SharedMemoryHeader {
@@ -59,6 +59,7 @@ struct ObjectEntry {
 	uint32_t inputPathID;
 
 	uint64_t version;
+	bool valid;
 };
 
 struct DevicePoseSerialized {
@@ -92,7 +93,7 @@ struct DeviceInputEyeTrackingSerialized {
 };
 
 struct ClientCommandHeader {
-	ClientCommandType commandType;
+	ClientCommandType type;
 
 	uint32_t deviceIndex;
 
@@ -104,7 +105,7 @@ struct CommandParams_SetUseOverridenStateDevicePose {
 };
 
 struct CommandParams_SetOverridenStateDevicePose {
-	DevicePoseSerialized overridenPose;
+	DevicePose overridenPose;
 };
 
 struct CommandParams_SetUseOverridenStateDeviceInput {
@@ -138,3 +139,31 @@ struct CommandParams_SetOverridenStateDeviceInputEyeTracking {
 };
 
 #pragma pack(pop)
+
+struct ModelObjectState {
+	bool useOverridenState;
+};
+
+struct ModelDevicePoseSerialized : public ModelObjectState {
+	DevicePoseSerialized data;
+};
+
+struct ModelDeviceInputBooleanSerialized : public ModelObjectState {
+	DeviceInputBooleanSerialized data;
+};
+
+struct ModelDeviceInputScalarSerialized : public ModelObjectState {
+	DeviceInputScalarSerialized data;
+};
+
+struct ModelDeviceInputSkeletonSerialized : public ModelObjectState {
+	DeviceInputSkeletonSerialized data;
+};
+
+struct ModelDeviceInputPoseSerialized : public ModelObjectState {
+	DeviceInputPoseSerialized data;
+};
+
+struct ModelDeviceInputEyeTrackingSerialized : public ModelObjectState {
+	DeviceInputEyeTrackingSerialized data;
+};

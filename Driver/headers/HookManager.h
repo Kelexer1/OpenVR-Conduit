@@ -6,6 +6,10 @@
 #include <MinHook.h>
 #include <openvr_driver.h>
 
+#include "LogManager.h"
+#include "DeviceStateModelDriver.h"
+#include "Utils.h"
+
 /**
  * @brief Integer offsets from the IVRServerDriverHost interface vtable.
  * 

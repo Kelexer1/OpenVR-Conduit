@@ -3,3 +3,6 @@
 *.user
 *.VC.db
 *.ipch
+Build/
+Driver/x64/
+Lib/x64/

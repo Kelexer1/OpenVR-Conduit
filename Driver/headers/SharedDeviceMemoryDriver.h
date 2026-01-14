@@ -54,4 +54,5 @@ private:
 	bool initializeSharedMemoryData();
 
 	void writePacketToDriverClientLane(void* packet, uint32_t packetSize);
+	std::unique_ptr<uint8_t[]> readPacketFromClientDriverLane(uint32_t packetSize);
 };

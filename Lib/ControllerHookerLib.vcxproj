@@ -119,7 +119,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)SharedFiles\headers;$(SolutionDir)Driver\headers</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)SharedFiles\headers;$(SolutionDir)Lib\headers</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -157,14 +157,15 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\SharedFiles\src\DevicePoseCommandSender.cpp" />
-    <ClCompile Include="DeviceStateModelClient.cpp" />
-    <ClCompile Include="SharedDeviceMemoryClient.cpp" />
+    <ClInclude Include="headers\DeviceStateCommandSender.h" />
+    <ClInclude Include="headers\DeviceStateModelClient.h" />
+    <ClInclude Include="headers\IDeviceStateEventReciever.h" />
+    <ClInclude Include="headers\SharedDeviceMemoryClient.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\SharedFiles\headers\DevicePoseCommandSender.h" />
-    <ClInclude Include="DeviceStateModelClient.h" />
-    <ClInclude Include="SharedDeviceMemoryClient.h" />
+    <ClCompile Include="src\DeviceStateCommandSender.cpp" />
+    <ClCompile Include="src\DeviceStateModelClient.cpp" />
+    <ClCompile Include="src\SharedDeviceMemoryClient.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
