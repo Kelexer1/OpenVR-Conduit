@@ -6,6 +6,18 @@ std::ofstream LogManager::logFile;
 bool LogManager::initialized = false;
 
 bool LogManager::initialize() {
+    // Create directory if required
+    std::filesystem::path logPath(OUTPUT_PATH);
+    std::filesystem::path logDir = logPath.parent_path();
+    
+    try {
+        if (!logDir.empty() && !std::filesystem::exists(logDir)) {
+            std::filesystem::create_directories(logDir);
+        }
+    } catch (const std::filesystem::filesystem_error&) {
+        return false;
+    }
+
     // Opens the log file
 	logFile.open(OUTPUT_PATH, std::ios::out | std::ios::trunc);
 	if (!logFile.is_open()) {

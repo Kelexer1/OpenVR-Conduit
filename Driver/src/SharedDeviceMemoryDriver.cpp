@@ -53,17 +53,19 @@ bool SharedDeviceMemoryDriver::initializeSharedMemoryData() {
 	header.pathTableStart = this->pathTableStart = currentOffset;
 	header.pathTableSize = this->pathTableSize = PATH_TABLE_ENTRIES * sizeof(PathTableEntry);
 	header.pathTableEntries = PATH_TABLE_ENTRIES;
-	header.pathTableEntrySize = sizeof(PathTableEntry);
+	header.pathTableWriteOffset = 0;
 
 	currentOffset += header.pathTableSize;
 
 	header.driverClientLaneStart = this->driverClientLaneStart = currentOffset;
 	header.driverClientLaneSize = LANE_SIZE;
+	header.driverClientWriteOffset = 0;
 	
 	currentOffset += LANE_SIZE;
 
 	header.clientDriverLaneStart = currentOffset;
 	header.clientDriverLaneSize = LANE_SIZE;
+	header.clientDriverWriteOffset = 0;
 
 	memcpy(this->sharedMemory, &header, sizeof(SharedMemoryHeader));
 
@@ -79,6 +81,64 @@ void SharedDeviceMemoryDriver::pollForClientUpdates() {
 			// Read command header
 			auto headerBuf = this->readPacketFromClientDriverLane(sizeof(ClientCommandHeader));
 			commandHeader = reinterpret_cast<ClientCommandHeader*>(headerBuf.get());
+
+			if (!this->isValidCommandHeader(commandHeader, headerPtr)) {
+				LogManager::log(LOG_ERROR, "Alignment error detected in client driver lane at offset {}", this->clientDriverLaneReadOffset);
+
+				bool recovered = false;
+				size_t searchOffset = this->clientDriverLaneReadOffset;
+
+				const size_t FORWARD_SEARCH_BYTES = 4096;
+				const size_t BACKWARD_SEARCH_BYTES = 512;
+
+				// Strategy 1: Forward Check
+				for (size_t i = 0; i < FORWARD_SEARCH_BYTES; i++) {
+					searchOffset = (searchOffset + 1) % LANE_SIZE;
+
+					size_t tempOffset = this->clientDriverLaneReadOffset;
+					this->clientDriverLaneReadOffset = searchOffset;
+					auto testBuf = this->readPacketFromClientDriverLane(sizeof(ClientCommandHeader));
+					ClientCommandHeader* testHeader = reinterpret_cast<ClientCommandHeader*>(testBuf.get());
+
+					if (this->isValidCommandHeader(testHeader, headerPtr)) {
+						LogManager::log(LOG_INFO, "Recovered alignment at offset {} (skipped {} bytes)", searchOffset, i);
+						recovered = true;
+						break;
+					}
+
+					this->clientDriverLaneReadOffset = tempOffset;
+				}
+
+				// Strategy 2: Backward Check
+				if (!recovered) {
+					for (size_t i = 0; i < FORWARD_SEARCH_BYTES; i++) {
+						searchOffset = (searchOffset - 1) % LANE_SIZE;
+
+						size_t tempOffset = this->clientDriverLaneReadOffset;
+						this->clientDriverLaneReadOffset = searchOffset;
+						auto testBuf = this->readPacketFromClientDriverLane(sizeof(ClientCommandHeader));
+						ClientCommandHeader* testHeader = reinterpret_cast<ClientCommandHeader*>(testBuf.get());
+
+						if (this->isValidCommandHeader(testHeader, headerPtr)) {
+							LogManager::log(LOG_INFO, "Recovered alignment at offset {} (skipped -{} bytes)", searchOffset, i);
+							recovered = true;
+							break;
+						}
+
+						this->clientDriverLaneReadOffset = tempOffset;
+					}
+				}
+				
+				// Strategy 3: Jump To Write Offset
+				if (!recovered) {
+					LogManager::log(LOG_ERROR, "Could not recover alignment after searching +{} / -{} bytes, discarded queued commands", FORWARD_SEARCH_BYTES, BACKWARD_SEARCH_BYTES);
+					this->clientDriverLaneReadOffset = headerPtr->clientDriverWriteOffset;
+					this->clientDriverReadCount = headerPtr->clientDriverWriteCount;
+				}
+
+				headerBuf = this->readPacketFromClientDriverLane(sizeof(ClientCommandHeader));
+				commandHeader = reinterpret_cast<ClientCommandHeader*>(headerBuf.get());
+			}
 
 			uint32_t deviceIndex = commandHeader->deviceIndex;
 
@@ -258,7 +318,7 @@ std::unique_ptr<uint8_t[]> SharedDeviceMemoryDriver::readPacketFromClientDriverL
 }
 
 void SharedDeviceMemoryDriver::syncPathTableToSharedMemory(uint32_t pathID, const std::string& path) {
-	PathTableEntry entry;
+	PathTableEntry entry = {};
 	entry.ID = pathID;
 	entry.version = this->pathTableWriteCount;
 	strncpy_s(entry.path, path.c_str(), sizeof(entry.path) - 1);
@@ -270,10 +330,11 @@ void SharedDeviceMemoryDriver::syncPathTableToSharedMemory(uint32_t pathID, cons
 	this->pathTableWriteIndex = (this->pathTableWriteIndex + 1) % PATH_TABLE_ENTRIES;
 	SharedMemoryHeader* headerPtr = static_cast<SharedMemoryHeader*>(this->sharedMemory);
 	headerPtr->pathTableWriteCount++;
+	headerPtr->pathTableWriteOffset = this->pathTableWriteIndex * sizeof(PathTableEntry);
 }
 
 void SharedDeviceMemoryDriver::syncDevicePoseUpdateToSharedMemory(DevicePoseSerialized* packet, uint32_t deviceIndex) {
-	ObjectEntry entry;
+	ObjectEntry entry = {};
 	entry.type = Object_DevicePose;
 	entry.deviceIndex = deviceIndex;
 	entry.inputPathID = static_cast<uint32_t>(-1);
@@ -282,13 +343,17 @@ void SharedDeviceMemoryDriver::syncDevicePoseUpdateToSharedMemory(DevicePoseSeri
 	this->writePacketToDriverClientLane((void*)&entry, sizeof(ObjectEntry));
 	this->writePacketToDriverClientLane((void*)packet, sizeof(DevicePoseSerialized));
 
+	ObjectEntry zero = {};
+	this->writePacketToDriverClientLane((void*)&zero, sizeof(ObjectEntry));
+
 	SharedMemoryHeader* headerPtr = static_cast<SharedMemoryHeader*>(this->sharedMemory);
 	this->driverClientLaneWriteCount++;
 	headerPtr->driverClientWriteCount++;
+	headerPtr->driverClientWriteOffset = this->driverClientLaneWriteOffset;
 }
 
 void SharedDeviceMemoryDriver::syncDeviceInputBooleanUpdateToSharedMemory(DeviceInputBooleanSerialized* packet, uint32_t deviceIndex, uint32_t pathID) {
-	ObjectEntry entry;
+	ObjectEntry entry = {};
 	entry.type = Object_InputBoolean;
 	entry.deviceIndex = deviceIndex;
 	entry.inputPathID = pathID;
@@ -297,13 +362,17 @@ void SharedDeviceMemoryDriver::syncDeviceInputBooleanUpdateToSharedMemory(Device
 	this->writePacketToDriverClientLane((void*)&entry, sizeof(ObjectEntry));
 	this->writePacketToDriverClientLane((void*)packet, sizeof(DeviceInputBooleanSerialized));
 
+	ObjectEntry zero = {};
+	this->writePacketToDriverClientLane((void*)&zero, sizeof(ObjectEntry));
+
 	SharedMemoryHeader* headerPtr = static_cast<SharedMemoryHeader*>(this->sharedMemory);
 	this->driverClientLaneWriteCount++;
 	headerPtr->driverClientWriteCount++;
+	headerPtr->driverClientWriteOffset = this->driverClientLaneWriteOffset;
 }
 
 void SharedDeviceMemoryDriver::syncDeviceInputScalarUpdateToSharedMemory(DeviceInputScalarSerialized* packet, uint32_t deviceIndex, uint32_t pathID) {
-	ObjectEntry entry;
+	ObjectEntry entry = {};
 	entry.type = Object_InputScalar;
 	entry.deviceIndex = deviceIndex;
 	entry.inputPathID = pathID;
@@ -312,13 +381,17 @@ void SharedDeviceMemoryDriver::syncDeviceInputScalarUpdateToSharedMemory(DeviceI
 	this->writePacketToDriverClientLane((void*)&entry, sizeof(ObjectEntry));
 	this->writePacketToDriverClientLane((void*)packet, sizeof(DeviceInputScalarSerialized));
 
+	ObjectEntry zero = {};
+	this->writePacketToDriverClientLane((void*)&zero, sizeof(ObjectEntry));
+
 	SharedMemoryHeader* headerPtr = static_cast<SharedMemoryHeader*>(this->sharedMemory);
 	this->driverClientLaneWriteCount++;
 	headerPtr->driverClientWriteCount++;
+	headerPtr->driverClientWriteOffset = this->driverClientLaneWriteOffset;
 }
 
 void SharedDeviceMemoryDriver::syncDeviceInputSkeletonUpdateToSharedMemory(DeviceInputSkeletonSerialized* packet, uint32_t deviceIndex, uint32_t pathID) {
-	ObjectEntry entry;
+	ObjectEntry entry = {};
 	entry.type = Object_InputSkeleton;
 	entry.deviceIndex = deviceIndex;
 	entry.inputPathID = pathID;
@@ -327,13 +400,17 @@ void SharedDeviceMemoryDriver::syncDeviceInputSkeletonUpdateToSharedMemory(Devic
 	this->writePacketToDriverClientLane((void*)&entry, sizeof(ObjectEntry));
 	this->writePacketToDriverClientLane((void*)packet, sizeof(DeviceInputSkeletonSerialized));
 
+	ObjectEntry zero = {};
+	this->writePacketToDriverClientLane((void*)&zero, sizeof(ObjectEntry));
+
 	SharedMemoryHeader* headerPtr = static_cast<SharedMemoryHeader*>(this->sharedMemory);
 	this->driverClientLaneWriteCount++;
 	headerPtr->driverClientWriteCount++;
+	headerPtr->driverClientWriteOffset = this->driverClientLaneWriteOffset;
 }
 
 void SharedDeviceMemoryDriver::syncDeviceInputPoseUpdateToSharedMemory(DeviceInputPoseSerialized* packet, uint32_t deviceIndex, uint32_t pathID) {
-	ObjectEntry entry;
+	ObjectEntry entry = {};
 	entry.type = Object_InputPose;
 	entry.deviceIndex = deviceIndex;
 	entry.inputPathID = pathID;
@@ -342,13 +419,17 @@ void SharedDeviceMemoryDriver::syncDeviceInputPoseUpdateToSharedMemory(DeviceInp
 	this->writePacketToDriverClientLane((void*)&entry, sizeof(ObjectEntry));
 	this->writePacketToDriverClientLane((void*)packet, sizeof(DeviceInputPoseSerialized));
 
+	ObjectEntry zero = {};
+	this->writePacketToDriverClientLane((void*)&zero, sizeof(ObjectEntry));
+
 	SharedMemoryHeader* headerPtr = static_cast<SharedMemoryHeader*>(this->sharedMemory);
 	this->driverClientLaneWriteCount++;
 	headerPtr->driverClientWriteCount++;
+	headerPtr->driverClientWriteOffset = this->driverClientLaneWriteOffset;
 }
 
 void SharedDeviceMemoryDriver::syncDeviceInputEyeTrackingUpdateToSharedMemory(DeviceInputEyeTrackingSerialized* packet, uint32_t deviceIndex, uint32_t pathID) {
-	ObjectEntry entry;
+	ObjectEntry entry = {};
 	entry.type = Object_InputEyeTracking;
 	entry.deviceIndex = deviceIndex;
 	entry.inputPathID = pathID;
@@ -357,7 +438,33 @@ void SharedDeviceMemoryDriver::syncDeviceInputEyeTrackingUpdateToSharedMemory(De
 	this->writePacketToDriverClientLane((void*)&entry, sizeof(ObjectEntry));
 	this->writePacketToDriverClientLane((void*)packet, sizeof(DeviceInputEyeTrackingSerialized));
 
+	ObjectEntry zero = {};
+	this->writePacketToDriverClientLane((void*)&zero, sizeof(ObjectEntry));
+
 	SharedMemoryHeader* headerPtr = static_cast<SharedMemoryHeader*>(this->sharedMemory);
 	this->driverClientLaneWriteCount++;
 	headerPtr->driverClientWriteCount++;
+	headerPtr->driverClientWriteOffset = this->driverClientLaneWriteOffset;
+}
+
+bool SharedDeviceMemoryDriver::isValidCommandHeader(const ClientCommandHeader* header, const SharedMemoryHeader* sharedMemoryHeader) {
+	if (header->alignmentCheck != ALIGNMENT_CONSTANT) {
+		return false;
+	}
+
+	if (!(Command_SetUseOverridenStateDevicePose <= header->type && header->type <= Command_SetOverridenStateDeviceInputEyeTracking)) {
+		return false;
+	}
+
+	if (!(0 <= header->deviceIndex && header->deviceIndex < 128)) {
+		return false;
+	}
+
+	const int MAX_VERSION_DELTA = 1000;
+	const int difference = header->version - sharedMemoryHeader->clientDriverWriteCount;
+	if (abs(difference) > MAX_VERSION_DELTA) {
+		return false;
+	}
+
+	return true;
 }

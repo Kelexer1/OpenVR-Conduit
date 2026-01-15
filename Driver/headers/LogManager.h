@@ -2,6 +2,7 @@
 #include <fstream>
 #include <string>
 #include <iostream>
+#include <filesystem>
 #include <fmt/core.h>
 
 /**
@@ -58,7 +59,7 @@ public:
 		}
 
 		// Output the formatted message
-		std::string message = fmt::format(formatString, std::forward<Args>(args)...);
+		std::string message = fmt::vformat(formatString, fmt::make_format_args(args...));
 		std::cout << prefix << message << std::endl;
 	}
 

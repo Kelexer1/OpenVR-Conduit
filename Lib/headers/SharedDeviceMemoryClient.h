@@ -35,11 +35,13 @@ private:
 
 	uint32_t clientDriverLaneStart;
 	uint32_t clientDriverLaneWriteOffset;
-	uint64_t clientDriverWriteCount;
+	uint64_t clientDriverLaneWriteCount;
 
 	SharedDeviceMemoryClient() = default;
 
 	void writePacketToClientDriverLane(void* packet, uint32_t packetSize);
 	std::unique_ptr<uint8_t[]> readPacketFromDriverClientLane(uint32_t packetSize);
 	std::unique_ptr<uint8_t[]> readPacketFromPathTable(uint32_t packetSize);
+	bool isValidObjectPacket(const ObjectEntry* entry, const SharedMemoryHeader* header);
+	bool isValidPathTableEntry(const PathTableEntry* entry, const SharedMemoryHeader* header);
 };

@@ -23,6 +23,10 @@ bool SharedDeviceMemoryClient::initialize() {
 	if (!this->sharedMemory) {
 		return false;
 	}
+
+	if (static_cast<SharedMemoryHeader*>(this->sharedMemory)->protocolVersion != PROTOCOL_VERSION) {
+		return false;
+	}
 }
 
 void SharedDeviceMemoryClient::pollForDriverUpdates() {
@@ -36,6 +40,58 @@ void SharedDeviceMemoryClient::pollForDriverUpdates() {
 		do {
 			auto entryBuf = this->readPacketFromPathTable(sizeof(PathTableEntry));
 			entry = reinterpret_cast<PathTableEntry*>(entryBuf.get());
+
+			if (!this->isValidPathTableEntry(entry, headerPtr)) {
+				bool recovered = false;
+				size_t searchOffset = this->pathTableReadOffset;
+
+				const size_t FORWARD_SEARCH_BYTES = 1024;
+				const size_t BACKWARD_SEARCH_BYTES = 256;
+
+				// Strategy 1: Forward Check
+				for (size_t i = 0; i < FORWARD_SEARCH_BYTES; i++) {
+					searchOffset = (searchOffset + 1) % LANE_SIZE;
+
+					size_t tempOffset = this->pathTableReadOffset;
+					this->pathTableReadOffset = searchOffset;
+					auto testBuf = this->readPacketFromPathTable(sizeof(PathTableEntry));
+					PathTableEntry* testHeader = reinterpret_cast<PathTableEntry*>(testBuf.get());
+
+					if (this->isValidPathTableEntry(testHeader, headerPtr)) {
+						recovered = true;
+						break;
+					}
+
+					this->pathTableReadOffset = tempOffset;
+				}
+
+				// Strategy 2: Backward Check
+				if (!recovered) {
+					for (size_t i = 0; i < FORWARD_SEARCH_BYTES; i++) {
+						searchOffset = (searchOffset - 1) % LANE_SIZE;
+
+						size_t tempOffset = this->pathTableReadOffset;
+						this->pathTableReadOffset = searchOffset;
+						auto testBuf = this->readPacketFromPathTable(sizeof(PathTableEntry));
+						PathTableEntry* testHeader = reinterpret_cast<PathTableEntry*>(testBuf.get());
+
+						if (this->isValidPathTableEntry(testHeader, headerPtr)) {
+							recovered = true;
+							break;
+						}
+
+						this->pathTableReadOffset = tempOffset;
+					}
+				}
+
+				// Strategy 3: Jump To Write Offset
+				if (!recovered) {
+					this->pathTableReadCount = headerPtr->clientDriverWriteCount;
+				}
+
+				entryBuf = this->readPacketFromPathTable(sizeof(PathTableEntry));
+				entry = reinterpret_cast<PathTableEntry*>(entryBuf.get());
+			}
 
 			uint32_t pathID = entry->ID;
 			std::string path(entry->path);
@@ -55,6 +111,58 @@ void SharedDeviceMemoryClient::pollForDriverUpdates() {
 		do {
 			auto entryBuf = this->readPacketFromDriverClientLane(sizeof(ObjectEntry));
 			entry = reinterpret_cast<ObjectEntry*>(entryBuf.get());
+
+			if (!this->isValidObjectPacket(entry, headerPtr)) {
+				bool recovered = false;
+				size_t searchOffset = this->driverClientLaneReadOffset;
+
+				const size_t FORWARD_SEARCH_BYTES = 4096;
+				const size_t BACKWARD_SEARCH_BYTES = 512;
+
+				// Strategy 1: Forward Check
+				for (size_t i = 0; i < FORWARD_SEARCH_BYTES; i++) {
+					searchOffset = (searchOffset + 1) % LANE_SIZE;
+
+					size_t tempOffset = this->driverClientLaneReadOffset;
+					this->driverClientLaneReadOffset = searchOffset;
+					auto testBuf = this->readPacketFromDriverClientLane(sizeof(ObjectEntry));
+					ObjectEntry* testHeader = reinterpret_cast<ObjectEntry*>(testBuf.get());
+
+					if (this->isValidObjectPacket(testHeader, headerPtr)) {
+						recovered = true;
+						break;
+					}
+
+					this->driverClientLaneReadOffset = tempOffset;
+				}
+
+				// Strategy 2: Backward Check
+				if (!recovered) {
+					for (size_t i = 0; i < FORWARD_SEARCH_BYTES; i++) {
+						searchOffset = (searchOffset - 1) % LANE_SIZE;
+
+						size_t tempOffset = this->driverClientLaneReadOffset;
+						this->driverClientLaneReadOffset = searchOffset;
+						auto testBuf = this->readPacketFromDriverClientLane(sizeof(ObjectEntry));
+						ObjectEntry* testHeader = reinterpret_cast<ObjectEntry*>(testBuf.get());
+
+						if (this->isValidObjectPacket(testHeader, headerPtr)) {
+							recovered = true;
+							break;
+						}
+
+						this->driverClientLaneReadOffset = tempOffset;
+					}
+				}
+
+				// Strategy 3: Jump To Write Offset
+				if (!recovered) {
+					this->driverClientLaneReadCount = headerPtr->driverClientWriteCount;
+				}
+
+				entryBuf = this->readPacketFromDriverClientLane(sizeof(ObjectEntry));
+				entry = reinterpret_cast<ObjectEntry*>(entryBuf.get());
+			}
 
 			uint32_t deviceIndex = entry->deviceIndex;
 			uint32_t pathID = entry->inputPathID;
@@ -180,17 +288,21 @@ void SharedDeviceMemoryClient::pollForDriverUpdates() {
 }
 
 void SharedDeviceMemoryClient::issueCommandToSharedMemory(ClientCommandType type, uint32_t deviceIndex, void* paramsStart, uint32_t paramsSize) {
-	ClientCommandHeader* header = {};
-	header->type = type;
-	header->deviceIndex = deviceIndex;
-	header->version = this->clientDriverWriteCount;
+    ClientCommandHeader header = {};
+    header.type = type;
+    header.deviceIndex = deviceIndex;
+    header.version = this->clientDriverLaneWriteCount;
 
-	this->writePacketToClientDriverLane(header, sizeof(ClientCommandHeader));
-	this->writePacketToClientDriverLane(paramsStart, paramsSize);
+    this->writePacketToClientDriverLane(&header, sizeof(ClientCommandHeader));
+    this->writePacketToClientDriverLane(paramsStart, paramsSize);
 
-	SharedMemoryHeader* headerPtr = static_cast<SharedMemoryHeader*>(this->sharedMemory);
-	this->clientDriverWriteCount++;
-	headerPtr->clientDriverWriteCount++;
+	ClientCommandHeader zero = {};
+	this->writePacketToClientDriverLane(&zero, sizeof(ClientCommandHeader));
+
+    SharedMemoryHeader* headerPtr = static_cast<SharedMemoryHeader*>(this->sharedMemory);
+    this->clientDriverLaneWriteCount++;
+    headerPtr->clientDriverWriteCount++;
+    headerPtr->clientDriverWriteOffset = this->clientDriverLaneWriteOffset;
 }
 
 void SharedDeviceMemoryClient::writePacketToClientDriverLane(void* packet, uint32_t packetSize) {
@@ -275,4 +387,52 @@ std::unique_ptr<uint8_t[]> SharedDeviceMemoryClient::readPacketFromPathTable(uin
 	}
 
 	return buffer;
+}
+
+bool SharedDeviceMemoryClient::isValidObjectPacket(const ObjectEntry* entry, const SharedMemoryHeader* header) {
+	if (entry->alignmentCheck != ALIGNMENT_CONSTANT) {
+		return false;
+	}
+
+	if (!(Object_DevicePose <= entry->type && entry->type <= Object_InputEyeTracking)) {
+		return false;
+	}
+
+	if (!(0 <= entry->deviceIndex && entry->deviceIndex < 128)) {
+		return false;
+	}
+
+	if (!(0 <= entry->inputPathID && entry->inputPathID < PATH_TABLE_ENTRIES)) {
+		return false;
+	}
+
+	const int MAX_VERSION_DELTA = 1000;
+	const int difference = entry->version - header->driverClientWriteCount;
+	if (abs(difference) > MAX_VERSION_DELTA) {
+		return false;
+	}
+
+	return true;
+}
+
+bool SharedDeviceMemoryClient::isValidPathTableEntry(const PathTableEntry* entry, const SharedMemoryHeader* header) {
+	if (entry->alignmentCheck != ALIGNMENT_CONSTANT) {
+		return false;
+	}
+
+	if (!(0 <= entry->ID && entry->ID < PATH_TABLE_ENTRIES)) {
+		return false;
+	}
+
+	if (entry->path[sizeof(entry->path) - 1] != '\0') {
+		return false;
+	}
+	
+	const int MAX_VERSION_DELTA = 500;
+	const int difference = entry->version - header->pathTableWriteCount;
+	if (abs(difference) > MAX_VERSION_DELTA) {
+		return false;
+	}
+
+	return true;
 }
