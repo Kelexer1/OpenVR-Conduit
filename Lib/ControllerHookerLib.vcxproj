@@ -119,7 +119,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)SharedFiles\headers;$(SolutionDir)Lib\headers</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)SharedFiles\headers;$(SolutionDir)Lib\headers;$(SolutionDir)Lib\include</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
@@ -144,7 +144,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)SharedFiles\headers;$(SolutionDir)Driver\headers</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)SharedFiles\headers;$(SolutionDir)Lib\headers;$(SolutionDir)Lib\include</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -158,10 +158,10 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="headers\DeviceStateCommandSender.h" />
-    <ClInclude Include="headers\DeviceStateModelClient.h" />
-    <ClInclude Include="headers\IDeviceStateEventReciever.h" />
-    <ClInclude Include="headers\SharedDeviceMemoryClient.h" />
+    <ClInclude Include="include\DeviceStateCommandSender.h" />
+    <ClInclude Include="include\IDeviceStateEventReciever.h" />
+    <ClInclude Include="src\DeviceStateModelClient.h" />
+    <ClInclude Include="src\SharedDeviceMemoryClient.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\DeviceStateCommandSender.cpp" />

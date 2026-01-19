@@ -1,11 +1,26 @@
 #include "DeviceStateCommandSender.h"
 
+#include "SharedDeviceMemoryClient.h"
+#include "DeviceStateModelClient.h"
+
+void DeviceStateCommandSender::addEventListener(IDeviceStateEventReciever& listener) {
+	DeviceStateModelClient::getInstance().addEventListener(listener);
+}
+
+void DeviceStateCommandSender::removeEventListener(IDeviceStateEventReciever& listener) {
+	DeviceStateModelClient::getInstance().removeEventListener(listener);
+}
+
 bool DeviceStateCommandSender::initialize() {
 	return SharedDeviceMemoryClient::getInstance().initialize();
 }
 
 void DeviceStateCommandSender::notifyClientDisconnect() {
 	// todo send disconnect command
+}
+
+void DeviceStateCommandSender::pollForDriverUpdates() {
+	SharedDeviceMemoryClient::getInstance().pollForDriverUpdates();
 }
 
 void DeviceStateCommandSender::setOverridenDevicePose(uint32_t deviceIndex, const DevicePose newPose) {
@@ -125,6 +140,8 @@ bool DeviceStateCommandSender::getUseOverridenBooleanInputState(uint32_t deviceI
 	if (input != nullptr) {
 		return input->useOverridenState;
 	}
+
+	return false;
 }
 
 void DeviceStateCommandSender::setOverridenScalarInputState(uint32_t deviceIndex, const std::string& path, const ScalarInput newInput) {
@@ -193,6 +210,8 @@ bool DeviceStateCommandSender::getUseOverridenScalarInputState(uint32_t deviceIn
 	if (input != nullptr) {
 		return input->useOverridenState;
 	}
+
+	return false;
 }
 
 void DeviceStateCommandSender::setOverridenSkeletonInputState(uint32_t deviceIndex, const std::string& path, const SkeletonInput newInput) {
@@ -253,6 +272,18 @@ void DeviceStateCommandSender::setUseOverridenSkeletonInputState(uint32_t device
 	);
 }
 
+bool DeviceStateCommandSender::getUseOverridenSkeletonInputState(uint32_t deviceIndex, const std::string& path) {
+	uint32_t pathID = DeviceStateModelClient::getInstance().getIndexFromPath(path);
+	if (pathID == static_cast<uint32_t>(-1)) return false;
+
+	ModelDeviceInputSkeletonSerialized* input = DeviceStateModelClient::getInstance().getSkeletonInput(deviceIndex, pathID);
+	if (input != nullptr) {
+		return input->useOverridenState;
+	}
+
+	return false;
+}
+
 void DeviceStateCommandSender::setOverridenPoseInputState(uint32_t deviceIndex, const std::string& path, const PoseInput newInput) {
 	uint32_t pathID = DeviceStateModelClient::getInstance().getIndexFromPath(path);
 	if (pathID == static_cast<uint32_t>(-1)) return;
@@ -311,6 +342,18 @@ void DeviceStateCommandSender::setUseOverridenPoseInputState(uint32_t deviceInde
 	);
 }
 
+bool DeviceStateCommandSender::getUseOverridenPoseInputState(uint32_t deviceIndex, const std::string& path) {
+	uint32_t pathID = DeviceStateModelClient::getInstance().getIndexFromPath(path);
+	if (pathID == static_cast<uint32_t>(-1)) return false;
+
+	ModelDeviceInputPoseSerialized* input = DeviceStateModelClient::getInstance().getPoseInput(deviceIndex, pathID);
+	if (input != nullptr) {
+		return input->useOverridenState;
+	}
+
+	return false;
+}
+
 void DeviceStateCommandSender::setOverridenEyeTrackingInputState(uint32_t deviceIndex, const std::string& path, const EyeTrackingInput newInput) {
 	uint32_t pathID = DeviceStateModelClient::getInstance().getIndexFromPath(path);
 	if (pathID == static_cast<uint32_t>(-1)) return;
@@ -367,4 +410,16 @@ void DeviceStateCommandSender::setUseOverridenEyeTrackingInputState(uint32_t dev
 	SharedDeviceMemoryClient::getInstance().issueCommandToSharedMemory(
 		Command_SetUseOverridenStateDeviceInput, deviceIndex, &params, sizeof(CommandParams_SetUseOverridenStateDeviceInput)
 	);
+}
+
+bool DeviceStateCommandSender::getUseOverridenEyeTrackingInputState(uint32_t deviceIndex, const std::string& path) {
+	uint32_t pathID = DeviceStateModelClient::getInstance().getIndexFromPath(path);
+	if (pathID == static_cast<uint32_t>(-1)) return false;
+
+	ModelDeviceInputEyeTrackingSerialized* input = DeviceStateModelClient::getInstance().getEyeTrackingInput(deviceIndex, pathID);
+	if (input != nullptr) {
+		return input->useOverridenState;
+	}
+
+	return false;
 }

@@ -6,6 +6,7 @@
 
 const uint32_t NUM_OBJECT_TYPES = 6;
 const uint32_t ALIGNMENT_CONSTANT = 0x4F424A45;
+const double POLL_RATE = 256.0;
 
 enum ObjectType {
 	Object_DevicePose,
@@ -35,26 +36,25 @@ struct SharedMemoryHeader {
 	uint32_t pathTableStart;
 	uint32_t pathTableSize;
 	uint32_t pathTableEntries;
-	std::atomic<uint32_t> pathTableWriteCount;		// Client keeps its own last consumed write count to track updates
-	std::atomic<uint32_t> pathTableWriteOffset;
+	uint32_t pathTableWriteCount;
+	uint32_t pathTableMaxIndex;
 
 	uint32_t driverClientLaneStart;
 	uint32_t driverClientLaneSize;
 	std::atomic<uint32_t> driverClientWriteCount;	// Client keeps its own last consumed write count to track updates
 	std::atomic<uint32_t> driverClientWriteOffset;
+	std::atomic<uint32_t> driverClientReadOffset;
 
 	uint32_t clientDriverLaneStart;
 	uint32_t clientDriverLaneSize;
 	std::atomic<uint32_t> clientDriverWriteCount;	// Driver keeps its own last consumed write count to track updates
 	std::atomic<uint32_t> clientDriverWriteOffset;
+	std::atomic<uint32_t> clientDriverReadOffset;
 };
 
+// Index addressed in shared memory
 struct PathTableEntry {
-	uint32_t alignmentCheck = ALIGNMENT_CONSTANT;
-
-	uint32_t ID;	// Used to lookup the input path of inputs
 	char path[128];
-	uint64_t version;
 };
 
 struct ObjectEntry {

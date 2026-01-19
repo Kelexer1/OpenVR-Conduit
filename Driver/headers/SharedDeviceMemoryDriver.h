@@ -24,7 +24,8 @@ public:
 	bool initialize();
 	void pollForClientUpdates();
 
-	void syncPathTableToSharedMemory(uint32_t pathID, const std::string& path);
+	void syncPathTableEntryToSharedMemory(uint32_t pathID, const std::string& path, uint32_t maxDeviceIndex);
+
 	void syncDevicePoseUpdateToSharedMemory(DevicePoseSerialized* packet, uint32_t deviceIndex);
 	void syncDeviceInputBooleanUpdateToSharedMemory(DeviceInputBooleanSerialized* packet, uint32_t deviceIndex, uint32_t pathID);
 	void syncDeviceInputScalarUpdateToSharedMemory(DeviceInputScalarSerialized* packet, uint32_t deviceIndex, uint32_t pathID);
@@ -38,7 +39,6 @@ private:
 
 	uint32_t pathTableStart;
 	uint32_t pathTableSize;
-	uint32_t pathTableWriteIndex; // By index because all entries are uniform size
 	uint64_t pathTableWriteCount;
 
 	uint32_t driverClientLaneStart;

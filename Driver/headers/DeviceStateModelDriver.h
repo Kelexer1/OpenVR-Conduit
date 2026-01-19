@@ -77,6 +77,7 @@ public:
 
 private:
 	std::unordered_map<uint32_t, std::string> pathTable;
+	uint32_t pathTableMaxIndex;
 
 	// Device Index -> Device Property Container
 	std::unordered_map<uint32_t, vr::PropertyContainerHandle_t> indexTable;

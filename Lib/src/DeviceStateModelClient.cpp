@@ -22,6 +22,66 @@ void DeviceStateModelClient::removeDevicePath(uint32_t pathID) {
 	this->pathTable.erase(pathID);
 }
 
+void DeviceStateModelClient::notifyListenersInputAdded(uint32_t deviceIndex, const std::string& path, ObjectType type) {
+	switch (type) {
+	case Object_InputBoolean:
+		for (IDeviceStateEventReciever* listener : this->eventListeners) {
+			listener->DeviceInputBooleanAdded(deviceIndex, path);
+		}
+		break;
+	case Object_InputScalar:
+		for (IDeviceStateEventReciever* listener : this->eventListeners) {
+			listener->DeviceInputScalarAdded(deviceIndex, path);
+		}
+		break;
+	case Object_InputSkeleton:
+		for (IDeviceStateEventReciever* listener : this->eventListeners) {
+			listener->DeviceInputSkeletonAdded(deviceIndex, path);
+		}
+		break;
+	case Object_InputPose:
+		for (IDeviceStateEventReciever* listener : this->eventListeners) {
+			listener->DeviceInputPoseAdded(deviceIndex, path);
+		}
+		break;
+	case Object_InputEyeTracking:
+		for (IDeviceStateEventReciever* listener : this->eventListeners) {
+			listener->DeviceInputEyeTrackingAdded(deviceIndex, path);
+		}
+		break;
+	}
+}
+
+void DeviceStateModelClient::notifyListenersInputRemoved(uint32_t deviceIndex, const std::string& path, ObjectType type) {
+	switch (type) {
+	case Object_InputBoolean:
+		for (IDeviceStateEventReciever* listener : this->eventListeners) {
+			listener->DeviceInputBooleanRemoved(deviceIndex, path);
+		}
+		break;
+	case Object_InputScalar:
+		for (IDeviceStateEventReciever* listener : this->eventListeners) {
+			listener->DeviceInputScalarRemoved(deviceIndex, path);
+		}
+		break;
+	case Object_InputSkeleton:
+		for (IDeviceStateEventReciever* listener : this->eventListeners) {
+			listener->DeviceInputSkeletonRemoved(deviceIndex, path);
+		}
+		break;
+	case Object_InputPose:
+		for (IDeviceStateEventReciever* listener : this->eventListeners) {
+			listener->DeviceInputPoseRemoved(deviceIndex, path);
+		}
+		break;
+	case Object_InputEyeTracking:
+		for (IDeviceStateEventReciever* listener : this->eventListeners) {
+			listener->DeviceInputEyeTrackingRemoved(deviceIndex, path);
+		}
+		break;
+	}
+}
+
 ModelDevicePoseSerialized* DeviceStateModelClient::getDevicePose(uint32_t deviceIndex) {
 	auto it = this->devicePoses.find(deviceIndex);
 	return it == this->devicePoses.end() ? nullptr : &it->second;
@@ -63,7 +123,11 @@ void DeviceStateModelClient::addBooleanInput(uint32_t deviceIndex, uint32_t path
 		return;
 	}
 	
-	this->booleanInputs[deviceIndex][path];
+	auto it = this->booleanInputs.find(deviceIndex);
+	if (it == this->booleanInputs.end()) {
+		this->booleanInputs[deviceIndex][path];
+		this->notifyListenersInputAdded(deviceIndex, path, Object_InputBoolean);
+	}
 }
 
 void DeviceStateModelClient::removeBooleanInput(uint32_t deviceIndex, uint32_t pathID) {
@@ -75,6 +139,7 @@ void DeviceStateModelClient::removeBooleanInput(uint32_t deviceIndex, uint32_t p
 	auto it1 = this->booleanInputs.find(deviceIndex);
 	if (it1 != this->booleanInputs.end()) {
 		it1->second.erase(path);
+		this->notifyListenersInputRemoved(deviceIndex, path, Object_InputBoolean);
 	}
 }
 
@@ -111,7 +176,11 @@ void DeviceStateModelClient::addScalarInput(uint32_t deviceIndex, uint32_t pathI
 		return;
 	}
 
-	this->scalarInputs[deviceIndex][path];
+	auto it = this->scalarInputs.find(deviceIndex);
+	if (it == this->scalarInputs.end()) {
+		this->scalarInputs[deviceIndex][path];
+		this->notifyListenersInputAdded(deviceIndex, path, Object_InputScalar);
+	}
 }
 
 void DeviceStateModelClient::removeScalarInput(uint32_t deviceIndex, uint32_t pathID) {
@@ -123,6 +192,7 @@ void DeviceStateModelClient::removeScalarInput(uint32_t deviceIndex, uint32_t pa
 	auto it1 = this->scalarInputs.find(deviceIndex);
 	if (it1 != this->scalarInputs.end()) {
 		it1->second.erase(path);
+		this->notifyListenersInputRemoved(deviceIndex, path, Object_InputScalar);
 	}
 }
 
@@ -159,7 +229,11 @@ void DeviceStateModelClient::addSkeletonInput(uint32_t deviceIndex, uint32_t pat
 		return;
 	}
 
-	this->skeletonInputs[deviceIndex][path];
+	auto it = this->skeletonInputs.find(deviceIndex);
+	if (it == this->skeletonInputs.end()) {
+		this->skeletonInputs[deviceIndex][path];
+		this->notifyListenersInputAdded(deviceIndex, path, Object_InputSkeleton);
+	}
 }
 
 void DeviceStateModelClient::removeSkeletonInput(uint32_t deviceIndex, uint32_t pathID) {
@@ -171,6 +245,7 @@ void DeviceStateModelClient::removeSkeletonInput(uint32_t deviceIndex, uint32_t 
 	auto it1 = this->skeletonInputs.find(deviceIndex);
 	if (it1 != this->skeletonInputs.end()) {
 		it1->second.erase(path);
+		this->notifyListenersInputRemoved(deviceIndex, path, Object_InputSkeleton);
 	}
 }
 
@@ -207,7 +282,11 @@ void DeviceStateModelClient::addPoseInput(uint32_t deviceIndex, uint32_t pathID)
 		return;
 	}
 
-	this->poseInputs[deviceIndex][path];
+	auto it = this->poseInputs.find(deviceIndex);
+	if (it == this->poseInputs.end()) {
+		this->poseInputs[deviceIndex][path];
+		this->notifyListenersInputAdded(deviceIndex, path, Object_InputPose);
+	}
 }
 
 void DeviceStateModelClient::removePoseInput(uint32_t deviceIndex, uint32_t pathID) {
@@ -219,6 +298,7 @@ void DeviceStateModelClient::removePoseInput(uint32_t deviceIndex, uint32_t path
 	auto it1 = this->poseInputs.find(deviceIndex);
 	if (it1 != this->poseInputs.end()) {
 		it1->second.erase(path);
+		this->notifyListenersInputRemoved(deviceIndex, path, Object_InputPose);
 	}
 }
 
@@ -255,7 +335,11 @@ void DeviceStateModelClient::addEyeTrackingInput(uint32_t deviceIndex, uint32_t 
 		return;
 	}
 
-	this->eyeTrackingInputs[deviceIndex][path];
+	auto it = this->eyeTrackingInputs.find(deviceIndex);
+	if (it == this->eyeTrackingInputs.end()) {
+		this->eyeTrackingInputs[deviceIndex][path];
+		this->notifyListenersInputAdded(deviceIndex, path, Object_InputEyeTracking);
+	}
 }
 
 void DeviceStateModelClient::removeEyeTrackingInput(uint32_t deviceIndex, uint32_t pathID) {
@@ -267,6 +351,7 @@ void DeviceStateModelClient::removeEyeTrackingInput(uint32_t deviceIndex, uint32
 	auto it1 = this->eyeTrackingInputs.find(deviceIndex);
 	if (it1 != this->eyeTrackingInputs.end()) {
 		it1->second.erase(path);
+		this->notifyListenersInputRemoved(deviceIndex, path, Object_InputEyeTracking);
 	}
 }
 

@@ -12,7 +12,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ConduitLib", "Lib\Controlle
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared Files", "Shared Files", "{CF4B5CD8-81AA-4578-B0B6-09182D72C3DD}"
 	ProjectSection(SolutionItems) = preProject
-		SharedFiles\headers\DeviceTypes.h = SharedFiles\headers\DeviceTypes.h
+		Lib\include\DeviceTypes.h = Lib\include\DeviceTypes.h
 		SharedFiles\headers\ObjectSchemas.h = SharedFiles\headers\ObjectSchemas.h
 	EndProjectSection
 EndProject

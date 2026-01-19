@@ -6,3 +6,5 @@
 Build/
 Driver/x64/
 Lib/x64/
+Samples/Build
+Samples/*/x64

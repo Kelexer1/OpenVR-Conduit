@@ -6,8 +6,6 @@
 #include <thread>
 #include <chrono>
 
-extern const double POLL_RATE;
-
 class Main {
 public:
 	static Main& getInstance();

@@ -1,4 +1,5 @@
 #include "SharedDeviceMemoryClient.h"
+#include <iostream>
 
 const char* SHM_NAME = "Local\\ConduitSharedDeviceMemory";
 const uint32_t PATH_TABLE_ENTRIES = 256;
@@ -11,22 +12,31 @@ SharedDeviceMemoryClient& SharedDeviceMemoryClient::getInstance() {
 	return instance;
 }
 
-bool SharedDeviceMemoryClient::initialize() {
+int SharedDeviceMemoryClient::initialize() {
 	this->sharedMemoryHandle = OpenFileMappingA(FILE_MAP_ALL_ACCESS, FALSE, SHM_NAME);
 
 	if (!this->sharedMemoryHandle) {
-		return false;
+		return 1;
 	}
 
 	this->sharedMemory = MapViewOfFile(this->sharedMemoryHandle, FILE_MAP_ALL_ACCESS, 0, 0, 0);
 
 	if (!this->sharedMemory) {
-		return false;
+		return 2;
 	}
 
-	if (static_cast<SharedMemoryHeader*>(this->sharedMemory)->protocolVersion != PROTOCOL_VERSION) {
-		return false;
+	SharedMemoryHeader* header = static_cast<SharedMemoryHeader*>(this->sharedMemory);
+
+	if (header->protocolVersion != PROTOCOL_VERSION) {
+		return 3;
 	}
+
+	this->pathTableStart = header->pathTableStart;
+	this->pathTableSize = sizeof(PathTableEntry) * PATH_TABLE_ENTRIES;
+	this->driverClientLaneStart = header->driverClientLaneStart;
+	this->clientDriverLaneStart = header->clientDriverLaneStart;
+
+	return 0;
 }
 
 void SharedDeviceMemoryClient::pollForDriverUpdates() {
@@ -35,73 +45,21 @@ void SharedDeviceMemoryClient::pollForDriverUpdates() {
 
 	// Path table updates
 	if (this->pathTableReadCount < headerPtr->pathTableWriteCount) {
-		PathTableEntry* entry;
+		uint32_t newWriteCount = headerPtr->pathTableWriteCount;
 
-		do {
-			auto entryBuf = this->readPacketFromPathTable(sizeof(PathTableEntry));
-			entry = reinterpret_cast<PathTableEntry*>(entryBuf.get());
+		for (uint32_t pathID = 0; pathID < headerPtr->pathTableMaxIndex; pathID++) {
+			auto entryBuf = this->readEntryFromPathTable(pathID);
+			PathTableEntry* entry = reinterpret_cast<PathTableEntry*>(entryBuf.get());
 
-			if (!this->isValidPathTableEntry(entry, headerPtr)) {
-				bool recovered = false;
-				size_t searchOffset = this->pathTableReadOffset;
-
-				const size_t FORWARD_SEARCH_BYTES = 1024;
-				const size_t BACKWARD_SEARCH_BYTES = 256;
-
-				// Strategy 1: Forward Check
-				for (size_t i = 0; i < FORWARD_SEARCH_BYTES; i++) {
-					searchOffset = (searchOffset + 1) % LANE_SIZE;
-
-					size_t tempOffset = this->pathTableReadOffset;
-					this->pathTableReadOffset = searchOffset;
-					auto testBuf = this->readPacketFromPathTable(sizeof(PathTableEntry));
-					PathTableEntry* testHeader = reinterpret_cast<PathTableEntry*>(testBuf.get());
-
-					if (this->isValidPathTableEntry(testHeader, headerPtr)) {
-						recovered = true;
-						break;
-					}
-
-					this->pathTableReadOffset = tempOffset;
-				}
-
-				// Strategy 2: Backward Check
-				if (!recovered) {
-					for (size_t i = 0; i < FORWARD_SEARCH_BYTES; i++) {
-						searchOffset = (searchOffset - 1) % LANE_SIZE;
-
-						size_t tempOffset = this->pathTableReadOffset;
-						this->pathTableReadOffset = searchOffset;
-						auto testBuf = this->readPacketFromPathTable(sizeof(PathTableEntry));
-						PathTableEntry* testHeader = reinterpret_cast<PathTableEntry*>(testBuf.get());
-
-						if (this->isValidPathTableEntry(testHeader, headerPtr)) {
-							recovered = true;
-							break;
-						}
-
-						this->pathTableReadOffset = tempOffset;
-					}
-				}
-
-				// Strategy 3: Jump To Write Offset
-				if (!recovered) {
-					this->pathTableReadCount = headerPtr->clientDriverWriteCount;
-				}
-
-				entryBuf = this->readPacketFromPathTable(sizeof(PathTableEntry));
-				entry = reinterpret_cast<PathTableEntry*>(entryBuf.get());
-			}
-
-			uint32_t pathID = entry->ID;
 			std::string path(entry->path);
-
-			if (!path.empty()) {
-				model.addDevicePath(pathID, path);
-			} else {
+			if (path.empty()) {
 				model.removeDevicePath(pathID);
+			} else {
+				model.addDevicePath(pathID, path);
 			}
-		} while (entry->version < this->pathTableReadCount);
+		}
+
+		this->pathTableReadCount = newWriteCount;
 	}
 
 	// Driver -> Client lane updates
@@ -113,6 +71,8 @@ void SharedDeviceMemoryClient::pollForDriverUpdates() {
 			entry = reinterpret_cast<ObjectEntry*>(entryBuf.get());
 
 			if (!this->isValidObjectPacket(entry, headerPtr)) {
+				std::cout << "Driver -> Client Packet misaligned\n";
+
 				bool recovered = false;
 				size_t searchOffset = this->driverClientLaneReadOffset;
 
@@ -158,6 +118,7 @@ void SharedDeviceMemoryClient::pollForDriverUpdates() {
 				// Strategy 3: Jump To Write Offset
 				if (!recovered) {
 					this->driverClientLaneReadCount = headerPtr->driverClientWriteCount;
+					this->driverClientLaneReadOffset = headerPtr->driverClientWriteOffset;
 				}
 
 				entryBuf = this->readPacketFromDriverClientLane(sizeof(ObjectEntry));
@@ -167,6 +128,8 @@ void SharedDeviceMemoryClient::pollForDriverUpdates() {
 			uint32_t deviceIndex = entry->deviceIndex;
 			uint32_t pathID = entry->inputPathID;
 
+			std::cout << "Read a packet of " << entry->type << "\n";
+
 			switch (entry->type) {
 				case Object_DevicePose: {
 					auto dataBuf = this->readPacketFromDriverClientLane(sizeof(DevicePoseSerialized));
@@ -174,9 +137,9 @@ void SharedDeviceMemoryClient::pollForDriverUpdates() {
 
 					if (entry->valid) {
 						ModelDevicePoseSerialized* pose = model.getDevicePose(deviceIndex);
-						ModelDevicePoseSerialized oldPose = *pose;
 
 						if (pose) {
+							ModelDevicePoseSerialized oldPose = *pose;
 							pose->data = *data;
 							model.notifyListenersDevicePoseUpdated(deviceIndex, oldPose.data, *data);
 						}
@@ -192,9 +155,9 @@ void SharedDeviceMemoryClient::pollForDriverUpdates() {
 
 					if (entry->valid) {
 						ModelDeviceInputBooleanSerialized* input = model.getBooleanInput(deviceIndex, pathID);
-						ModelDeviceInputBooleanSerialized oldInput = *input;
-
+						
 						if (input) {
+							ModelDeviceInputBooleanSerialized oldInput = *input;
 							input->data = *data;
 							model.notifyListenersBooleanInputUpdated(deviceIndex, pathID, oldInput.data, *data);
 						}
@@ -210,9 +173,9 @@ void SharedDeviceMemoryClient::pollForDriverUpdates() {
 
 					if (entry->valid) {
 						ModelDeviceInputScalarSerialized* input = model.getScalarInput(deviceIndex, pathID);
-						ModelDeviceInputScalarSerialized oldInput = *input;
 
 						if (input) {
+							ModelDeviceInputScalarSerialized oldInput = *input;
 							input->data = *data;
 							model.notifyListenersScalarInputUpdated(deviceIndex, pathID, oldInput.data, *data);
 						}
@@ -229,15 +192,15 @@ void SharedDeviceMemoryClient::pollForDriverUpdates() {
 
 					if (entry->valid) {
 						ModelDeviceInputSkeletonSerialized* input = model.getSkeletonInput(deviceIndex, pathID);
-						ModelDeviceInputSkeletonSerialized oldInput = *input;
 
 						if (input) {
+							ModelDeviceInputSkeletonSerialized oldInput = *input;
 							input->data = *data;
 							model.notifyListenersSkeletonInputUpdated(deviceIndex, pathID, oldInput.data, *data);
 						}
 					}
 					else {
-						model.removeBooleanInput(deviceIndex, pathID);
+						model.removeSkeletonInput(deviceIndex, pathID);
 					}
 
 					break;
@@ -248,15 +211,15 @@ void SharedDeviceMemoryClient::pollForDriverUpdates() {
 
 					if (entry->valid) {
 						ModelDeviceInputPoseSerialized* input = model.getPoseInput(deviceIndex, pathID);
-						ModelDeviceInputPoseSerialized oldInput = *input;
 
 						if (input) {
+							ModelDeviceInputPoseSerialized oldInput = *input;
 							input->data = *data;
 							model.notifyListenersPoseInputUpdated(deviceIndex, pathID, oldInput.data, *data);
 						}
 					}
 					else {
-						model.removeBooleanInput(deviceIndex, pathID);
+						model.removePoseInput(deviceIndex, pathID);
 					}
 
 					break;
@@ -267,21 +230,23 @@ void SharedDeviceMemoryClient::pollForDriverUpdates() {
 
 					if (entry->valid) {
 						ModelDeviceInputEyeTrackingSerialized* input = model.getEyeTrackingInput(deviceIndex, pathID);
-						ModelDeviceInputEyeTrackingSerialized oldInput = *input;
 
 						if (input) {
+							ModelDeviceInputEyeTrackingSerialized oldInput = *input;
 							input->data = *data;
 							model.notifyListenersEyeTrackingInputUpdated(deviceIndex, pathID, oldInput.data, *data);
 						}
 					}
 					else {
-						model.removeBooleanInput(deviceIndex, pathID);
+						model.removeEyeTrackingInput(deviceIndex, pathID);
 					}
 
 					break;
 				}
 			}
-		} while (entry->version < this->driverClientLaneReadCount);
+
+			this->driverClientLaneReadCount = entry->version;
+		} while (this->driverClientLaneReadCount < headerPtr->driverClientWriteCount);
 
 		this->driverClientLaneReadCount = headerPtr->driverClientWriteCount;
 	}
@@ -307,6 +272,24 @@ void SharedDeviceMemoryClient::issueCommandToSharedMemory(ClientCommandType type
 
 void SharedDeviceMemoryClient::writePacketToClientDriverLane(void* packet, uint32_t packetSize) {
 	if (packet != nullptr && packetSize > 0) {
+		SharedMemoryHeader* headerPtr = static_cast<SharedMemoryHeader*>(this->sharedMemory);
+
+		size_t readOffset = headerPtr->clientDriverReadOffset;
+		size_t writeOffset = this->clientDriverLaneWriteOffset;
+
+		size_t freeSpace;
+		if (writeOffset >= readOffset) {
+			freeSpace = (LANE_SIZE - writeOffset) + readOffset;
+		}
+		else {
+			freeSpace = readOffset - writeOffset;
+		}
+
+		if (packetSize > freeSpace) {
+			std::cout << "Client would lap reader - dropping packet of size" << packetSize << " (free space :" << freeSpace << ")\n";
+			return;
+		}
+
 		uint8_t* laneStart = static_cast<uint8_t*>(this->sharedMemory) + this->clientDriverLaneStart;
 		size_t currentOffset = this->clientDriverLaneWriteOffset;
 
@@ -349,88 +332,55 @@ std::unique_ptr<uint8_t[]> SharedDeviceMemoryClient::readPacketFromDriverClientL
 		memcpy(buffer.get() + firstPartitionSize, laneStart, secondPartitionSize);
 
 		this->driverClientLaneReadOffset = secondPartitionSize;
-	}
-	else {
+	} else {
 		memcpy(buffer.get(), laneStart + currentOffset, packetSize);
+
 		this->driverClientLaneReadOffset = (currentOffset + packetSize) % LANE_SIZE;
 	}
+
+	SharedMemoryHeader* headerPtr = static_cast<SharedMemoryHeader*>(this->sharedMemory);
+	headerPtr->driverClientReadOffset = this->driverClientLaneReadOffset;
 
 	return buffer;
 }
 
-std::unique_ptr<uint8_t[]> SharedDeviceMemoryClient::readPacketFromPathTable(uint32_t packetSize) {
-	if (packetSize == 0) {
-		return nullptr;
-	}
-
-	auto buffer = std::make_unique<uint8_t[]>(packetSize);
+std::unique_ptr<uint8_t[]> SharedDeviceMemoryClient::readEntryFromPathTable(uint32_t pathID) {
+	auto buffer = std::make_unique<uint8_t[]>(sizeof(PathTableEntry));
 	if (!buffer) {
 		return nullptr;
 	}
 
-	uint8_t* laneStart = static_cast<uint8_t*>(this->sharedMemory) + this->pathTableStart;
-	size_t currentOffset = this->pathTableReadOffset;
-
-	// Handle wrap around
-	if (currentOffset + packetSize > LANE_SIZE) {
-		size_t firstPartitionSize = LANE_SIZE - currentOffset;
-		memcpy(buffer.get(), laneStart + currentOffset, firstPartitionSize);
-
-		size_t secondPartitionSize = packetSize - firstPartitionSize;
-		memcpy(buffer.get() + firstPartitionSize, laneStart, secondPartitionSize);
-
-		this->pathTableReadOffset = secondPartitionSize;
-	}
-	else {
-		memcpy(buffer.get(), laneStart + currentOffset, packetSize);
-		this->pathTableReadOffset = (currentOffset + packetSize) % LANE_SIZE;
-	}
+	uint8_t* offset = static_cast<uint8_t*>(this->sharedMemory) + this->pathTableStart + pathID * sizeof(PathTableEntry);
+	memcpy(buffer.get(), offset, sizeof(PathTableEntry));
 
 	return buffer;
 }
 
 bool SharedDeviceMemoryClient::isValidObjectPacket(const ObjectEntry* entry, const SharedMemoryHeader* header) {
 	if (entry->alignmentCheck != ALIGNMENT_CONSTANT) {
+		std::cout << "Alignment constant\n";
 		return false;
 	}
 
 	if (!(Object_DevicePose <= entry->type && entry->type <= Object_InputEyeTracking)) {
+		std::cout << "Object type range\n";
 		return false;
 	}
 
 	if (!(0 <= entry->deviceIndex && entry->deviceIndex < 128)) {
+		std::cout << "Object index range\n";
 		return false;
 	}
 
 	if (!(0 <= entry->inputPathID && entry->inputPathID < PATH_TABLE_ENTRIES)) {
+		std::cout << "Path ID range\n";
 		return false;
 	}
 
 	const int MAX_VERSION_DELTA = 1000;
 	const int difference = entry->version - header->driverClientWriteCount;
 	if (abs(difference) > MAX_VERSION_DELTA) {
-		return false;
-	}
-
-	return true;
-}
-
-bool SharedDeviceMemoryClient::isValidPathTableEntry(const PathTableEntry* entry, const SharedMemoryHeader* header) {
-	if (entry->alignmentCheck != ALIGNMENT_CONSTANT) {
-		return false;
-	}
-
-	if (!(0 <= entry->ID && entry->ID < PATH_TABLE_ENTRIES)) {
-		return false;
-	}
-
-	if (entry->path[sizeof(entry->path) - 1] != '\0') {
-		return false;
-	}
-	
-	const int MAX_VERSION_DELTA = 500;
-	const int difference = entry->version - header->pathTableWriteCount;
-	if (abs(difference) > MAX_VERSION_DELTA) {
+		std::cout << "Version delta\n";
 		return false;
 	}
 

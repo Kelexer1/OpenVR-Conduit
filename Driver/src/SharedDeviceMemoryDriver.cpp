@@ -44,7 +44,7 @@ bool SharedDeviceMemoryDriver::initialize() {
 
 bool SharedDeviceMemoryDriver::initializeSharedMemoryData() {
 	// Init header
-	SharedMemoryHeader header;
+	SharedMemoryHeader header = {};
 
 	header.protocolVersion = PROTOCOL_VERSION;
 
@@ -53,19 +53,24 @@ bool SharedDeviceMemoryDriver::initializeSharedMemoryData() {
 	header.pathTableStart = this->pathTableStart = currentOffset;
 	header.pathTableSize = this->pathTableSize = PATH_TABLE_ENTRIES * sizeof(PathTableEntry);
 	header.pathTableEntries = PATH_TABLE_ENTRIES;
-	header.pathTableWriteOffset = 0;
+	header.pathTableWriteCount = 0;
+	header.pathTableMaxIndex = 0;
 
 	currentOffset += header.pathTableSize;
 
 	header.driverClientLaneStart = this->driverClientLaneStart = currentOffset;
 	header.driverClientLaneSize = LANE_SIZE;
+	header.driverClientWriteCount = 0;
 	header.driverClientWriteOffset = 0;
+	header.driverClientReadOffset = 0;
 	
 	currentOffset += LANE_SIZE;
 
 	header.clientDriverLaneStart = currentOffset;
 	header.clientDriverLaneSize = LANE_SIZE;
+	header.clientDriverWriteCount = 0;
 	header.clientDriverWriteOffset = 0;
+	header.clientDriverReadOffset = 0;
 
 	memcpy(this->sharedMemory, &header, sizeof(SharedMemoryHeader));
 
@@ -268,6 +273,23 @@ void SharedDeviceMemoryDriver::pollForClientUpdates() {
 
 void SharedDeviceMemoryDriver::writePacketToDriverClientLane(void* packet, uint32_t packetSize) {
 	if (packet != nullptr && packetSize > 0) {
+		SharedMemoryHeader* headerPtr = static_cast<SharedMemoryHeader*>(this->sharedMemory);
+		
+		size_t readOffset = headerPtr->driverClientReadOffset;
+		size_t writeOffset = this->driverClientLaneWriteOffset;
+		
+		size_t freeSpace;
+		if (writeOffset >= readOffset) {
+			freeSpace = (LANE_SIZE - writeOffset) + readOffset;
+		} else {
+			freeSpace = readOffset - writeOffset;
+		}
+		
+		if (packetSize > freeSpace) {
+			LogManager::log(LOG_INFO, "Driver would lap reader - dropping packet of size {} (free space: {})", packetSize, freeSpace);
+			return;
+		}
+
 		uint8_t* laneStart = static_cast<uint8_t*>(this->sharedMemory) + this->driverClientLaneStart;
 		size_t currentOffset = this->driverClientLaneWriteOffset;
 
@@ -277,7 +299,7 @@ void SharedDeviceMemoryDriver::writePacketToDriverClientLane(void* packet, uint3
 			memcpy(laneStart + currentOffset, packet, firstPartitionSize);
 
 			size_t secondPartitionSize = packetSize - firstPartitionSize;
-			memcpy(laneStart + currentOffset, reinterpret_cast<uint8_t*>(packet) + firstPartitionSize, secondPartitionSize);
+			memcpy(laneStart, reinterpret_cast<uint8_t*>(packet) + firstPartitionSize, secondPartitionSize);
 
 			this->driverClientLaneWriteOffset = secondPartitionSize;
 		} else {
@@ -314,23 +336,27 @@ std::unique_ptr<uint8_t[]> SharedDeviceMemoryDriver::readPacketFromClientDriverL
 		this->clientDriverLaneReadOffset = (currentOffset + packetSize) % LANE_SIZE;
 	}
 
+	SharedMemoryHeader* headerPtr = static_cast<SharedMemoryHeader*>(this->sharedMemory);
+	headerPtr->clientDriverReadOffset = this->clientDriverLaneReadOffset;
+
 	return buffer;
 }
 
-void SharedDeviceMemoryDriver::syncPathTableToSharedMemory(uint32_t pathID, const std::string& path) {
+void SharedDeviceMemoryDriver::syncPathTableEntryToSharedMemory(uint32_t pathID, const std::string& path, uint32_t maxDeviceIndex) {
+	SharedMemoryHeader* headerPtr = static_cast<SharedMemoryHeader*>(this->sharedMemory);
+
 	PathTableEntry entry = {};
-	entry.ID = pathID;
-	entry.version = this->pathTableWriteCount;
 	strncpy_s(entry.path, path.c_str(), sizeof(entry.path) - 1);
 
-	// Write data starting at current index, should never have to loop around mid write
-	memcpy(static_cast<uint8_t*>(this->sharedMemory) + this->pathTableStart + this->pathTableWriteIndex * sizeof(PathTableEntry), &entry, sizeof(PathTableEntry));
-	
-	// Update write count in shared memory header
-	this->pathTableWriteIndex = (this->pathTableWriteIndex + 1) % PATH_TABLE_ENTRIES;
-	SharedMemoryHeader* headerPtr = static_cast<SharedMemoryHeader*>(this->sharedMemory);
+	uint8_t* writeOffset = static_cast<uint8_t*>(this->sharedMemory) + this->pathTableStart + pathID * sizeof(PathTableEntry);
+	memcpy(writeOffset, &entry, sizeof(PathTableEntry));
+	std::atomic_thread_fence(std::memory_order_release);
+
 	headerPtr->pathTableWriteCount++;
-	headerPtr->pathTableWriteOffset = this->pathTableWriteIndex * sizeof(PathTableEntry);
+	
+	if (headerPtr->pathTableMaxIndex != maxDeviceIndex) {
+		headerPtr->pathTableMaxIndex = maxDeviceIndex;
+	}
 }
 
 void SharedDeviceMemoryDriver::syncDevicePoseUpdateToSharedMemory(DevicePoseSerialized* packet, uint32_t deviceIndex) {

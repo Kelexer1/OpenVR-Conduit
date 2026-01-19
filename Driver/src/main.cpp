@@ -1,7 +1,5 @@
 #include "main.h"
 
-const double POLL_RATE = 256.0;
-
 Main& Main::getInstance() {
 	static Main instance;
 	return instance;
@@ -12,6 +10,7 @@ void Main::main() {
 
 	while (true) {
 		SharedDeviceMemoryDriver::getInstance().pollForClientUpdates();
+
 		this->pollEvents();
 
 		std::this_thread::sleep_for(std::chrono::microseconds((int)POLL_PERIOD_MICROSECONDS));

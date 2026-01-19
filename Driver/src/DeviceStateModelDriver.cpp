@@ -8,21 +8,35 @@ DeviceStateModel& DeviceStateModel::getInstance() {
 void DeviceStateModel::addDevicePath(const std::string& path) {
 	uint32_t nextIndex = this->findNextAvailablePathTableIndex();
 
-	if (nextIndex == static_cast<uint32_t>(-1)) {
-		return;
-	}
-
 	if (nextIndex != static_cast<uint32_t>(-1)) {
 		this->pathTable[nextIndex] = path;
-		SharedDeviceMemoryDriver::getInstance().syncPathTableToSharedMemory(nextIndex, path);
+
+		if (nextIndex > this->pathTableMaxIndex) {
+			this->pathTableMaxIndex = nextIndex;
+		}
+
+		SharedDeviceMemoryDriver::getInstance().syncPathTableEntryToSharedMemory(nextIndex, path, this->pathTableMaxIndex);
 	}
 }
 
 void DeviceStateModel::removeDevicePath(const std::string& path) {
-	uint32_t nextIndex = this->findIndexOfPath(path);
+	uint32_t pathID = this->findIndexOfPath(path);
 	
-	if (this->pathTable.erase(nextIndex) == 1) {
-		SharedDeviceMemoryDriver::getInstance().syncPathTableToSharedMemory(nextIndex, "");
+	if (this->pathTable.erase(pathID) == 1) {
+
+		if (pathID >= this->pathTableMaxIndex) {
+			uint32_t newMaxIndex = 0;
+			for (uint32_t i = 0; i < PATH_TABLE_ENTRIES; i++) {
+				auto it = this->pathTable.find(i);
+				if (it != this->pathTable.end()) {
+					newMaxIndex = i;
+				}
+			}
+
+			this->pathTableMaxIndex = newMaxIndex;
+		}
+
+		SharedDeviceMemoryDriver::getInstance().syncPathTableEntryToSharedMemory(pathID, "", this->pathTableMaxIndex);
 	}
 }
 
