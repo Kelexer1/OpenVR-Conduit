@@ -12,15 +12,13 @@ void DeviceStateCommandSender::removeEventListener(IDeviceStateEventReciever& li
 }
 
 bool DeviceStateCommandSender::initialize() {
-	return SharedDeviceMemoryClient::getInstance().initialize();
+	if (!SharedDeviceMemoryClient::getInstance().getInitialized()) {
+		return SharedDeviceMemoryClient::getInstance().initialize();
+	}
 }
 
 void DeviceStateCommandSender::notifyClientDisconnect() {
 	// todo send disconnect command
-}
-
-void DeviceStateCommandSender::pollForDriverUpdates() {
-	SharedDeviceMemoryClient::getInstance().pollForDriverUpdates();
 }
 
 void DeviceStateCommandSender::setOverridenDevicePose(uint32_t deviceIndex, const DevicePose newPose) {

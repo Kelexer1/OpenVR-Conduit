@@ -36,7 +36,14 @@ int SharedDeviceMemoryClient::initialize() {
 	this->driverClientLaneStart = header->driverClientLaneStart;
 	this->clientDriverLaneStart = header->clientDriverLaneStart;
 
+	std::thread(&SharedDeviceMemoryClient::pollLoop, this).detach();
+
+	this->initialized = true;
 	return 0;
+}
+
+bool SharedDeviceMemoryClient::getInitialized() {
+	return this->initialized;
 }
 
 void SharedDeviceMemoryClient::pollForDriverUpdates() {
@@ -249,6 +256,15 @@ void SharedDeviceMemoryClient::pollForDriverUpdates() {
 		} while (this->driverClientLaneReadCount < headerPtr->driverClientWriteCount);
 
 		this->driverClientLaneReadCount = headerPtr->driverClientWriteCount;
+	}
+}
+
+void SharedDeviceMemoryClient::pollLoop() {
+	double POLL_PERIOD_MICROSECONDS = 1000000.0 / POLL_RATE;
+
+	while (true) {
+		this->pollForDriverUpdates();
+		std::this_thread::sleep_for(std::chrono::microseconds((int)POLL_PERIOD_MICROSECONDS));
 	}
 }
 

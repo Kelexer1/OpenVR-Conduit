@@ -14,7 +14,6 @@ public:
 	// Lifecycle commands
 	bool initialize();
 	void notifyClientDisconnect();
-	void pollForDriverUpdates();
 
 	// State commands
 	void setOverridenDevicePose(uint32_t deviceIndex, const DevicePose newPose);
