@@ -5,41 +5,6 @@ DeviceStateModel& DeviceStateModel::getInstance() {
 	return instance;
 }
 
-void DeviceStateModel::addDevicePath(const std::string& path) {
-	uint32_t nextIndex = this->findNextAvailablePathTableIndex();
-
-	if (nextIndex != static_cast<uint32_t>(-1)) {
-		this->pathTable[nextIndex] = path;
-
-		if (nextIndex > this->pathTableMaxIndex) {
-			this->pathTableMaxIndex = nextIndex;
-		}
-
-		SharedDeviceMemoryDriver::getInstance().syncPathTableEntryToSharedMemory(nextIndex, path, this->pathTableMaxIndex);
-	}
-}
-
-void DeviceStateModel::removeDevicePath(const std::string& path) {
-	uint32_t pathID = this->findIndexOfPath(path);
-	
-	if (this->pathTable.erase(pathID) == 1) {
-
-		if (pathID >= this->pathTableMaxIndex) {
-			uint32_t newMaxIndex = 0;
-			for (uint32_t i = 0; i < PATH_TABLE_ENTRIES; i++) {
-				auto it = this->pathTable.find(i);
-				if (it != this->pathTable.end()) {
-					newMaxIndex = i;
-				}
-			}
-
-			this->pathTableMaxIndex = newMaxIndex;
-		}
-
-		SharedDeviceMemoryDriver::getInstance().syncPathTableEntryToSharedMemory(pathID, "", this->pathTableMaxIndex);
-	}
-}
-
 void DeviceStateModel::addDeviceIndexToContainerMapping(uint32_t deviceIndex, vr::PropertyContainerHandle_t propertyContainer) {
 	this->indexTable[deviceIndex] = propertyContainer;
 }
@@ -100,11 +65,6 @@ ModelDeviceInputBooleanSerialized* DeviceStateModel::getBooleanInput(uint32_t de
 	return it2 == it1->second.end() ? nullptr : &(it2->second.second);
 }
 
-ModelDeviceInputBooleanSerialized* DeviceStateModel::getBooleanInput(uint32_t deviceIndex, uint32_t pathID) {
-	auto it = this->pathTable.find(pathID);
-	return it == this->pathTable.end() ? nullptr : this->getBooleanInput(deviceIndex, it->second);
-}
-
 ModelDeviceInputBooleanSerialized* DeviceStateModel::getBooleanInput(vr::VRInputComponentHandle_t componentHandle) {
 	for (auto& devicePair : this->booleanInputs) {
 		for (auto& pathPair : devicePair.second) {
@@ -119,13 +79,25 @@ ModelDeviceInputBooleanSerialized* DeviceStateModel::getBooleanInput(vr::VRInput
 void DeviceStateModel::setInputBooleanChanged(uint32_t deviceIndex, const std::string& path) {
 	ModelDeviceInputBooleanSerialized* inputBoolean = this->getBooleanInput(deviceIndex, path);
 	if (inputBoolean != nullptr) {
-		SharedDeviceMemoryDriver::getInstance().syncDeviceInputBooleanUpdateToSharedMemory(&inputBoolean->data, deviceIndex, this->findIndexOfPath(path));
+		SharedDeviceMemoryDriver::getInstance().syncDeviceInputBooleanUpdateToSharedMemory(&inputBoolean->data, deviceIndex, path);
 	}
 }
 
-void DeviceStateModel::setInputBooleanChanged(uint32_t deviceIndex, uint32_t pathID) {
-	auto it = this->pathTable.find(pathID);
-	if (it != this->pathTable.end()) this->setInputBooleanChanged(deviceIndex, it->second);
+void DeviceStateModel::setInputBooleanChanged(vr::VRInputComponentHandle_t componentHandle) {
+	for (auto& devicePair : this->booleanInputs) {
+		for (auto& pathPair : devicePair.second) {
+			if (pathPair.second.first == componentHandle) {
+				uint32_t deviceIndex = devicePair.first;
+				const std::string& path = pathPair.first;
+				SharedDeviceMemoryDriver::getInstance().syncDeviceInputBooleanUpdateToSharedMemory(
+					&pathPair.second.second.data, 
+					deviceIndex, 
+					path
+				);
+				return;
+			}
+		}
+	}
 }
 
 void DeviceStateModel::addBooleanInput(uint32_t deviceIndex, const std::string& path, vr::VRInputComponentHandle_t* componentHandle) {
@@ -152,11 +124,6 @@ ModelDeviceInputScalarSerialized* DeviceStateModel::getScalarInput(uint32_t devi
 	return it2 == it1->second.end() ? nullptr : &(it2->second.second);
 }
 
-ModelDeviceInputScalarSerialized* DeviceStateModel::getScalarInput(uint32_t deviceIndex, uint32_t pathID) {
-	auto it = this->pathTable.find(pathID);
-	return it == this->pathTable.end() ? nullptr : this->getScalarInput(deviceIndex, it->second);
-}
-
 ModelDeviceInputScalarSerialized* DeviceStateModel::getScalarInput(vr::VRInputComponentHandle_t componentHandle) {
 	for (auto& devicePair : this->scalarInputs) {
 		for (auto& pathPair : devicePair.second) {
@@ -171,13 +138,25 @@ ModelDeviceInputScalarSerialized* DeviceStateModel::getScalarInput(vr::VRInputCo
 void DeviceStateModel::setInputScalarChanged(uint32_t deviceIndex, const std::string& path) {
 	ModelDeviceInputScalarSerialized* inputScalar = this->getScalarInput(deviceIndex, path);
 	if (inputScalar != nullptr) {
-		SharedDeviceMemoryDriver::getInstance().syncDeviceInputScalarUpdateToSharedMemory(&inputScalar->data, deviceIndex, this->findIndexOfPath(path));
+		SharedDeviceMemoryDriver::getInstance().syncDeviceInputScalarUpdateToSharedMemory(&inputScalar->data, deviceIndex, path);
 	}
 }
 
-void DeviceStateModel::setInputScalarChanged(uint32_t deviceIndex, uint32_t pathID) {
-	auto it = this->pathTable.find(pathID);
-	if (it != this->pathTable.end()) this->setInputScalarChanged(deviceIndex, it->second);
+void DeviceStateModel::setInputScalarChanged(vr::VRInputComponentHandle_t componentHandle) {
+	for (auto& devicePair : this->scalarInputs) {
+		for (auto& pathPair : devicePair.second) {
+			if (pathPair.second.first == componentHandle) {
+				uint32_t deviceIndex = devicePair.first;
+				const std::string& path = pathPair.first;
+				SharedDeviceMemoryDriver::getInstance().syncDeviceInputScalarUpdateToSharedMemory(
+					&pathPair.second.second.data,
+					deviceIndex,
+					path
+				);
+				return;
+			}
+		}
+	}
 }
 
 void DeviceStateModel::addScalarInput(uint32_t deviceIndex, const std::string& path, vr::VRInputComponentHandle_t* componentHandle) {
@@ -204,11 +183,6 @@ ModelDeviceInputSkeletonSerialized* DeviceStateModel::getSkeletonInput(uint32_t 
 	return it2 == it1->second.end() ? nullptr : &(it2->second.second);
 }
 
-ModelDeviceInputSkeletonSerialized* DeviceStateModel::getSkeletonInput(uint32_t deviceIndex, uint32_t pathID) {
-	auto it = this->pathTable.find(pathID);
-	return it == this->pathTable.end() ? nullptr : this->getSkeletonInput(deviceIndex, it->second);
-}
-
 ModelDeviceInputSkeletonSerialized* DeviceStateModel::getSkeletonInput(vr::VRInputComponentHandle_t componentHandle) {
 	for (auto& devicePair : this->skeletonInputs) {
 		for (auto& pathPair : devicePair.second) {
@@ -223,13 +197,25 @@ ModelDeviceInputSkeletonSerialized* DeviceStateModel::getSkeletonInput(vr::VRInp
 void DeviceStateModel::setInputSkeletonChanged(uint32_t deviceIndex, const std::string& path) {
 	ModelDeviceInputSkeletonSerialized* inputSkeleton = this->getSkeletonInput(deviceIndex, path);
 	if (inputSkeleton != nullptr) {
-		SharedDeviceMemoryDriver::getInstance().syncDeviceInputSkeletonUpdateToSharedMemory(&inputSkeleton->data, deviceIndex, this->findIndexOfPath(path));
+		SharedDeviceMemoryDriver::getInstance().syncDeviceInputSkeletonUpdateToSharedMemory(&inputSkeleton->data, deviceIndex, path);
 	}
 }
 
-void DeviceStateModel::setInputSkeletonChanged(uint32_t deviceIndex, uint32_t pathID) {
-	auto it = this->pathTable.find(pathID);
-	if (it != this->pathTable.end()) this->setInputSkeletonChanged(deviceIndex, it->second);
+void DeviceStateModel::setInputSkeletonChanged(vr::VRInputComponentHandle_t componentHandle) {
+	for (auto& devicePair : this->skeletonInputs) {
+		for (auto& pathPair : devicePair.second) {
+			if (pathPair.second.first == componentHandle) {
+				uint32_t deviceIndex = devicePair.first;
+				const std::string& path = pathPair.first;
+				SharedDeviceMemoryDriver::getInstance().syncDeviceInputSkeletonUpdateToSharedMemory(
+					&pathPair.second.second.data,
+					deviceIndex,
+					path
+				);
+				return;
+			}
+		}
+	}
 }
 
 void DeviceStateModel::addSkeletonInput(uint32_t deviceIndex, const std::string& path, vr::VRInputComponentHandle_t* componentHandle) {
@@ -256,11 +242,6 @@ ModelDeviceInputPoseSerialized* DeviceStateModel::getPoseInput(uint32_t deviceIn
 	return it2 == it1->second.end() ? nullptr : &(it2->second.second);
 }
 
-ModelDeviceInputPoseSerialized* DeviceStateModel::getPoseInput(uint32_t deviceIndex, uint32_t pathID) {
-	auto it = this->pathTable.find(pathID);
-	return it == this->pathTable.end() ? nullptr : this->getPoseInput(deviceIndex, it->second);
-}
-
 ModelDeviceInputPoseSerialized* DeviceStateModel::getPoseInput(vr::VRInputComponentHandle_t componentHandle) {
 	for (auto& devicePair : this->poseInputs) {
 		for (auto& pathPair : devicePair.second) {
@@ -275,13 +256,25 @@ ModelDeviceInputPoseSerialized* DeviceStateModel::getPoseInput(vr::VRInputCompon
 void DeviceStateModel::setInputPoseChanged(uint32_t deviceIndex, const std::string& path) {
 	ModelDeviceInputPoseSerialized* inputPose = this->getPoseInput(deviceIndex, path);
 	if (inputPose != nullptr) {
-		SharedDeviceMemoryDriver::getInstance().syncDeviceInputPoseUpdateToSharedMemory(&inputPose->data, deviceIndex, this->findIndexOfPath(path));
+		SharedDeviceMemoryDriver::getInstance().syncDeviceInputPoseUpdateToSharedMemory(&inputPose->data, deviceIndex, path);
 	}
 }
 
-void DeviceStateModel::setInputPoseChanged(uint32_t deviceIndex, uint32_t pathID) {
-	auto it = this->pathTable.find(pathID);
-	if (it != this->pathTable.end()) this->setInputPoseChanged(deviceIndex, it->second);
+void DeviceStateModel::setInputPoseChanged(vr::VRInputComponentHandle_t componentHandle) {
+	for (auto& devicePair : this->poseInputs) {
+		for (auto& pathPair : devicePair.second) {
+			if (pathPair.second.first == componentHandle) {
+				uint32_t deviceIndex = devicePair.first;
+				const std::string& path = pathPair.first;
+				SharedDeviceMemoryDriver::getInstance().syncDeviceInputPoseUpdateToSharedMemory(
+					&pathPair.second.second.data,
+					deviceIndex,
+					path
+				);
+				return;
+			}
+		}
+	}
 }
 
 void DeviceStateModel::addPoseInput(uint32_t deviceIndex, const std::string& path, vr::VRInputComponentHandle_t* componentHandle) {
@@ -308,11 +301,6 @@ ModelDeviceInputEyeTrackingSerialized* DeviceStateModel::getEyeTrackingInput(uin
 	return it2 == it1->second.end() ? nullptr : &(it2->second.second);
 }
 
-ModelDeviceInputEyeTrackingSerialized* DeviceStateModel::getEyeTrackingInput(uint32_t deviceIndex, uint32_t pathID) {
-	auto it = this->pathTable.find(pathID);
-	return it == this->pathTable.end() ? nullptr : this->getEyeTrackingInput(deviceIndex, it->second);
-}
-
 ModelDeviceInputEyeTrackingSerialized* DeviceStateModel::getEyeTrackingInput(vr::VRInputComponentHandle_t componentHandle) {
 	for (auto& devicePair : this->eyeTrackingInputs) {
 		for (auto& pathPair : devicePair.second) {
@@ -327,13 +315,25 @@ ModelDeviceInputEyeTrackingSerialized* DeviceStateModel::getEyeTrackingInput(vr:
 void DeviceStateModel::setInputEyeTrackingChanged(uint32_t deviceIndex, const std::string& path) {
 	ModelDeviceInputEyeTrackingSerialized* inputEyeTracking = this->getEyeTrackingInput(deviceIndex, path);
 	if (inputEyeTracking != nullptr) {
-		SharedDeviceMemoryDriver::getInstance().syncDeviceInputEyeTrackingUpdateToSharedMemory(&inputEyeTracking->data, deviceIndex, this->findIndexOfPath(path));
+		SharedDeviceMemoryDriver::getInstance().syncDeviceInputEyeTrackingUpdateToSharedMemory(&inputEyeTracking->data, deviceIndex, path);
 	}
 }
 
-void DeviceStateModel::setInputEyeTrackingChanged(uint32_t deviceIndex, uint32_t pathID) {
-	auto it = this->pathTable.find(pathID);
-	if (it != this->pathTable.end()) this->setInputEyeTrackingChanged(deviceIndex, it->second);
+void DeviceStateModel::setInputEyeTrackingChanged(vr::VRInputComponentHandle_t componentHandle) {
+	for (auto& devicePair : this->eyeTrackingInputs) {
+		for (auto& pathPair : devicePair.second) {
+			if (pathPair.second.first == componentHandle) {
+				uint32_t deviceIndex = devicePair.first;
+				const std::string& path = pathPair.first;
+				SharedDeviceMemoryDriver::getInstance().syncDeviceInputEyeTrackingUpdateToSharedMemory(
+					&pathPair.second.second.data,
+					deviceIndex,
+					path
+				);
+				return;
+			}
+		}
+	}
 }
 
 void DeviceStateModel::addEyeTrackingInput(uint32_t deviceIndex, const std::string& path, vr::VRInputComponentHandle_t* componentHandle) {
@@ -346,65 +346,4 @@ void DeviceStateModel::removeEyeTrackingInput(uint32_t deviceIndex, const std::s
 	if (it != this->eyeTrackingInputs.end()) {
 		it->second.erase(path);
 	}
-}
-
-void DeviceStateModel::cleanDeviceIndexAssociations(uint32_t deviceIndex) {
-	// Free path table slot
-	this->pathTable.erase(deviceIndex);
-
-	// Free device pose
-	this->removeDevicePose(deviceIndex);
-
-	// Free index table
-	this->removeDeviceIndexToContainerMapping(deviceIndex);
-
-	// Collect all paths associated with this device index
-	std::vector<std::string> pathsToCheck;
-	
-	collectPathsAndEraseDevice(this->booleanInputs, deviceIndex, pathsToCheck);
-	collectPathsAndEraseDevice(this->scalarInputs, deviceIndex, pathsToCheck);
-	collectPathsAndEraseDevice(this->skeletonInputs, deviceIndex, pathsToCheck);
-	collectPathsAndEraseDevice(this->poseInputs, deviceIndex, pathsToCheck);
-	collectPathsAndEraseDevice(this->eyeTrackingInputs, deviceIndex, pathsToCheck);
-	
-	// Remove paths that are no longer used by any device
-	for (const auto& path : pathsToCheck) {
-		if (!isPathUsedByAnyDevice(path)) {
-			this->removeDevicePath(path);
-		}
-	}
-}
-
-uint32_t DeviceStateModel::findIndexOfPath(const std::string& path) {
-	auto it = std::find_if(this->pathTable.begin(), this->pathTable.end(),
-		[&](const std::pair<uint32_t, std::string>& pair) {
-			return pair.second == path;
-		}
-	);
-
-	if (it != this->pathTable.end()) {
-		return it->first;
-	}
-
-	return static_cast<uint32_t>(-1);
-}
-
-uint32_t DeviceStateModel::findNextAvailablePathTableIndex() {
-	for (uint32_t i = 0; i < PATH_TABLE_ENTRIES; i++) {
-		auto it = this->pathTable.find(i);
-
-		if (it == this->pathTable.end()) {
-			return i;
-		}
-	}
-
-	return static_cast<uint32_t>(-1);
-}
-
-bool DeviceStateModel::isPathUsedByAnyDevice(const std::string& path) {
-	return isPathInUse(this->booleanInputs, path) ||
-	       isPathInUse(this->scalarInputs, path) ||
-	       isPathInUse(this->skeletonInputs, path) ||
-	       isPathInUse(this->poseInputs, path) ||
-	       isPathInUse(this->eyeTrackingInputs, path);
 }

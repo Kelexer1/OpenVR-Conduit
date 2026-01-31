@@ -4,9 +4,15 @@
 
 #include "DeviceTypes.h"
 
-const uint32_t NUM_OBJECT_TYPES = 6;
-const uint32_t ALIGNMENT_CONSTANT = 0x4F424A45;
-const double POLL_RATE = 256.0;
+inline const uint32_t NUM_OBJECT_TYPES = 6U;
+inline const uint32_t ALIGNMENT_CONSTANT = 0x4F424A45U;
+inline const uint32_t MAX_INPUT_PATH_LENGTH = 256U;
+
+inline const char* SHM_NAME = "Local\\ConduitSharedDeviceMemory";
+inline const uint32_t LANE_SIZE = 1048576U * 5U;		// 5mb
+inline const uint32_t LANE_PADDING_SIZE = 1024U * 5U;	// 5kb
+
+inline const double POLL_RATE = 512.0;
 
 enum ObjectType {
 	Object_DevicePose,
@@ -33,28 +39,17 @@ enum ClientCommandType {
 struct SharedMemoryHeader {
 	uint32_t protocolVersion;
 
-	uint32_t pathTableStart;
-	uint32_t pathTableSize;
-	uint32_t pathTableEntries;
-	uint32_t pathTableWriteCount;
-	uint32_t pathTableMaxIndex;
-
 	uint32_t driverClientLaneStart;
 	uint32_t driverClientLaneSize;
-	std::atomic<uint32_t> driverClientWriteCount;	// Client keeps its own last consumed write count to track updates
+	std::atomic<uint64_t> driverClientWriteCount;	// Client keeps its own last consumed write count to track updates
 	std::atomic<uint32_t> driverClientWriteOffset;
 	std::atomic<uint32_t> driverClientReadOffset;
 
 	uint32_t clientDriverLaneStart;
 	uint32_t clientDriverLaneSize;
-	std::atomic<uint32_t> clientDriverWriteCount;	// Driver keeps its own last consumed write count to track updates
+	std::atomic<uint64_t> clientDriverWriteCount;	// Driver keeps its own last consumed write count to track updates
 	std::atomic<uint32_t> clientDriverWriteOffset;
 	std::atomic<uint32_t> clientDriverReadOffset;
-};
-
-// Index addressed in shared memory
-struct PathTableEntry {
-	char path[128];
 };
 
 struct ObjectEntry {
@@ -63,10 +58,12 @@ struct ObjectEntry {
 	ObjectType type;
 
 	uint32_t deviceIndex;
-	uint32_t inputPathID;
+	char inputPath[MAX_INPUT_PATH_LENGTH];
 
 	uint64_t version;
 	bool valid;
+
+	std::atomic<bool> committed;
 };
 
 struct DevicePoseSerialized {
@@ -119,35 +116,44 @@ struct CommandParams_SetOverridenStateDevicePose {
 
 struct CommandParams_SetUseOverridenStateDeviceInput {
 	bool useOverridenState;
-	uint32_t pathID;
+	char inputPath[MAX_INPUT_PATH_LENGTH];
 };
 
 struct CommandParams_SetOverridenStateDeviceInputBoolean {
 	BooleanInput overridenValue;
-	uint32_t pathID;
+	char inputPath[MAX_INPUT_PATH_LENGTH];
 };
 
 struct CommandParams_SetOverridenStateDeviceInputScalar {
 	ScalarInput overridenValue;
-	uint32_t pathID;
+	char inputPath[MAX_INPUT_PATH_LENGTH];
 };
 
 struct CommandParams_SetOverridenStateDeviceInputSkeleton {
 	SkeletonInput overridenValue;
-	uint32_t pathID;
+	char inputPath[MAX_INPUT_PATH_LENGTH];
 };
 
 struct CommandParams_SetOverridenStateDeviceInputPose {
 	PoseInput overridenValue;
-	uint32_t pathID;
+	char inputPath[MAX_INPUT_PATH_LENGTH];
 };
 
 struct CommandParams_SetOverridenStateDeviceInputEyeTracking {
 	EyeTrackingInput overridenValue;
-	uint32_t pathID;
+	char inputPath[MAX_INPUT_PATH_LENGTH];
 };
 
 #pragma pack(pop)
+
+struct ObjectEntryData {
+	bool successful;
+	bool valid;
+	ObjectType type;
+	uint32_t deviceIndex;
+	uint64_t version;
+	char inputPath[MAX_INPUT_PATH_LENGTH];
+};
 
 struct ModelObjectState {
 	bool useOverridenState;

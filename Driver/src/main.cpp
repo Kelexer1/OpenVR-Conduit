@@ -25,7 +25,7 @@ void Main::pollEvents() {
 			break;
 
 		case vr::VREvent_TrackedDeviceDeactivated:
-			DeviceStateModel::getInstance().cleanDeviceIndexAssociations(event.trackedDeviceIndex);
+			// todo check if we need to do anything here
 			break;
 		}
 	}

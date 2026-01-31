@@ -14,14 +14,6 @@ void DeviceStateModelClient::removeEventListener(const IDeviceStateEventReciever
 	this->eventListeners.erase(it, this->eventListeners.end());
 }
 
-void DeviceStateModelClient::addDevicePath(uint32_t pathID, const std::string& path) {
-	this->pathTable[pathID] = path;
-}
-
-void DeviceStateModelClient::removeDevicePath(uint32_t pathID) {
-	this->pathTable.erase(pathID);
-}
-
 void DeviceStateModelClient::notifyListenersInputAdded(uint32_t deviceIndex, const std::string& path, ObjectType type) {
 	switch (type) {
 	case Object_InputBoolean:
@@ -101,12 +93,7 @@ void DeviceStateModelClient::notifyListenersDevicePoseUpdated(uint32_t deviceInd
 	}
 }
 
-ModelDeviceInputBooleanSerialized* DeviceStateModelClient::getBooleanInput(uint32_t deviceIndex, uint32_t pathID) {
-	std::string path = this->getPathFromIndex(pathID);
-	if (path == "") {
-		return nullptr;
-	}
-
+ModelDeviceInputBooleanSerialized* DeviceStateModelClient::getBooleanInput(uint32_t deviceIndex, const std::string& path) {
 	auto it1 = this->booleanInputs.find(deviceIndex);
 	if (it1 == this->booleanInputs.end()) {
 		return nullptr;
@@ -117,25 +104,15 @@ ModelDeviceInputBooleanSerialized* DeviceStateModelClient::getBooleanInput(uint3
 	return it2 == it1->second.end() ? nullptr : &(it2->second);
 }
 
-void DeviceStateModelClient::addBooleanInput(uint32_t deviceIndex, uint32_t pathID) {
-	std::string path = this->getPathFromIndex(pathID);
-	if (path == "") {
-		return;
-	}
-	
-	auto it = this->booleanInputs.find(deviceIndex);
-	if (it == this->booleanInputs.end()) {
+void DeviceStateModelClient::addBooleanInput(uint32_t deviceIndex, const std::string& path) {
+	auto it = this->booleanInputs[deviceIndex].find(path);
+	if (it == this->booleanInputs[deviceIndex].end()) {
 		this->booleanInputs[deviceIndex][path];
 		this->notifyListenersInputAdded(deviceIndex, path, Object_InputBoolean);
 	}
 }
 
-void DeviceStateModelClient::removeBooleanInput(uint32_t deviceIndex, uint32_t pathID) {
-	std::string path = this->getPathFromIndex(pathID);
-	if (path == "") {
-		return;
-	}
-
+void DeviceStateModelClient::removeBooleanInput(uint32_t deviceIndex, const std::string& path) {
 	auto it1 = this->booleanInputs.find(deviceIndex);
 	if (it1 != this->booleanInputs.end()) {
 		it1->second.erase(path);
@@ -143,23 +120,13 @@ void DeviceStateModelClient::removeBooleanInput(uint32_t deviceIndex, uint32_t p
 	}
 }
 
-void DeviceStateModelClient::notifyListenersBooleanInputUpdated(uint32_t deviceIndex, uint32_t pathID, const DeviceInputBooleanSerialized oldInput, const DeviceInputBooleanSerialized newInput) {
-	const std::string path = this->getPathFromIndex(pathID);
-	if (path == "") {
-		return;
-	}
-
+void DeviceStateModelClient::notifyListenersBooleanInputUpdated(uint32_t deviceIndex, const std::string& path, const DeviceInputBooleanSerialized oldInput, const DeviceInputBooleanSerialized newInput) {
 	for (IDeviceStateEventReciever* listener : this->eventListeners) {
 		listener->DeviceInputBooleanChanged(deviceIndex, path, oldInput.value, newInput.value);
 	}
 }
 
-ModelDeviceInputScalarSerialized* DeviceStateModelClient::getScalarInput(uint32_t deviceIndex, uint32_t pathID) {
-	std::string path = this->getPathFromIndex(pathID);
-	if (path == "") {
-		return nullptr;
-	}
-
+ModelDeviceInputScalarSerialized* DeviceStateModelClient::getScalarInput(uint32_t deviceIndex, const std::string& path) {
 	auto it1 = this->scalarInputs.find(deviceIndex);
 	if (it1 == this->scalarInputs.end()) {
 		return nullptr;
@@ -170,25 +137,15 @@ ModelDeviceInputScalarSerialized* DeviceStateModelClient::getScalarInput(uint32_
 	return it2 == it1->second.end() ? nullptr : &(it2->second);
 }
 
-void DeviceStateModelClient::addScalarInput(uint32_t deviceIndex, uint32_t pathID) {
-	std::string path = this->getPathFromIndex(pathID);
-	if (path == "") {
-		return;
-	}
-
-	auto it = this->scalarInputs.find(deviceIndex);
-	if (it == this->scalarInputs.end()) {
+void DeviceStateModelClient::addScalarInput(uint32_t deviceIndex, const std::string& path) {
+	auto it = this->scalarInputs[deviceIndex].find(path);
+	if (it == this->scalarInputs[deviceIndex].end()) {
 		this->scalarInputs[deviceIndex][path];
 		this->notifyListenersInputAdded(deviceIndex, path, Object_InputScalar);
 	}
 }
 
-void DeviceStateModelClient::removeScalarInput(uint32_t deviceIndex, uint32_t pathID) {
-	std::string path = this->getPathFromIndex(pathID);
-	if (path == "") {
-		return;
-	}
-
+void DeviceStateModelClient::removeScalarInput(uint32_t deviceIndex, const std::string& path) {
 	auto it1 = this->scalarInputs.find(deviceIndex);
 	if (it1 != this->scalarInputs.end()) {
 		it1->second.erase(path);
@@ -196,23 +153,13 @@ void DeviceStateModelClient::removeScalarInput(uint32_t deviceIndex, uint32_t pa
 	}
 }
 
-void DeviceStateModelClient::notifyListenersScalarInputUpdated(uint32_t deviceIndex, uint32_t pathID, const DeviceInputScalarSerialized oldInput, const DeviceInputScalarSerialized newInput) {
-	const std::string path = this->getPathFromIndex(pathID);
-	if (path == "") {
-		return;
-	}
-
+void DeviceStateModelClient::notifyListenersScalarInputUpdated(uint32_t deviceIndex, const std::string& path, const DeviceInputScalarSerialized oldInput, const DeviceInputScalarSerialized newInput) {
 	for (IDeviceStateEventReciever* listener : this->eventListeners) {
 		listener->DeviceInputScalarChanged(deviceIndex, path, oldInput.value, newInput.value);
 	}
 }
 
-ModelDeviceInputSkeletonSerialized* DeviceStateModelClient::getSkeletonInput(uint32_t deviceIndex, uint32_t pathID) {
-	std::string path = this->getPathFromIndex(pathID);
-	if (path == "") {
-		return nullptr;
-	}
-
+ModelDeviceInputSkeletonSerialized* DeviceStateModelClient::getSkeletonInput(uint32_t deviceIndex, const std::string& path) {
 	auto it1 = this->skeletonInputs.find(deviceIndex);
 	if (it1 == this->skeletonInputs.end()) {
 		return nullptr;
@@ -223,25 +170,15 @@ ModelDeviceInputSkeletonSerialized* DeviceStateModelClient::getSkeletonInput(uin
 	return it2 == it1->second.end() ? nullptr : &(it2->second);
 }
 
-void DeviceStateModelClient::addSkeletonInput(uint32_t deviceIndex, uint32_t pathID) {
-	std::string path = this->getPathFromIndex(pathID);
-	if (path == "") {
-		return;
-	}
-
-	auto it = this->skeletonInputs.find(deviceIndex);
-	if (it == this->skeletonInputs.end()) {
+void DeviceStateModelClient::addSkeletonInput(uint32_t deviceIndex, const std::string& path) {
+	auto it = this->skeletonInputs[deviceIndex].find(path);
+	if (it == this->skeletonInputs[deviceIndex].end()) {
 		this->skeletonInputs[deviceIndex][path];
 		this->notifyListenersInputAdded(deviceIndex, path, Object_InputSkeleton);
 	}
 }
 
-void DeviceStateModelClient::removeSkeletonInput(uint32_t deviceIndex, uint32_t pathID) {
-	std::string path = this->getPathFromIndex(pathID);
-	if (path == "") {
-		return;
-	}
-
+void DeviceStateModelClient::removeSkeletonInput(uint32_t deviceIndex, const std::string& path) {
 	auto it1 = this->skeletonInputs.find(deviceIndex);
 	if (it1 != this->skeletonInputs.end()) {
 		it1->second.erase(path);
@@ -249,23 +186,13 @@ void DeviceStateModelClient::removeSkeletonInput(uint32_t deviceIndex, uint32_t 
 	}
 }
 
-void DeviceStateModelClient::notifyListenersSkeletonInputUpdated(uint32_t deviceIndex, uint32_t pathID, const DeviceInputSkeletonSerialized oldInput, const DeviceInputSkeletonSerialized newInput) {
-	const std::string path = this->getPathFromIndex(pathID);
-	if (path == "") {
-		return;
-	}
-
+void DeviceStateModelClient::notifyListenersSkeletonInputUpdated(uint32_t deviceIndex, const std::string& path, const DeviceInputSkeletonSerialized oldInput, const DeviceInputSkeletonSerialized newInput) {
 	for (IDeviceStateEventReciever* listener : this->eventListeners) {
 		listener->DeviceInputSkeletonChanged(deviceIndex, path, oldInput.value, newInput.value);
 	}
 }
 
-ModelDeviceInputPoseSerialized* DeviceStateModelClient::getPoseInput(uint32_t deviceIndex, uint32_t pathID) {
-	std::string path = this->getPathFromIndex(pathID);
-	if (path == "") {
-		return nullptr;
-	}
-
+ModelDeviceInputPoseSerialized* DeviceStateModelClient::getPoseInput(uint32_t deviceIndex, const std::string& path) {
 	auto it1 = this->poseInputs.find(deviceIndex);
 	if (it1 == this->poseInputs.end()) {
 		return nullptr;
@@ -276,25 +203,15 @@ ModelDeviceInputPoseSerialized* DeviceStateModelClient::getPoseInput(uint32_t de
 	return it2 == it1->second.end() ? nullptr : &(it2->second);
 }
 
-void DeviceStateModelClient::addPoseInput(uint32_t deviceIndex, uint32_t pathID) {
-	std::string path = this->getPathFromIndex(pathID);
-	if (path == "") {
-		return;
-	}
-
-	auto it = this->poseInputs.find(deviceIndex);
-	if (it == this->poseInputs.end()) {
+void DeviceStateModelClient::addPoseInput(uint32_t deviceIndex, const std::string& path) {
+	auto it = this->poseInputs[deviceIndex].find(path);
+	if (it == this->poseInputs[deviceIndex].end()) {
 		this->poseInputs[deviceIndex][path];
 		this->notifyListenersInputAdded(deviceIndex, path, Object_InputPose);
 	}
 }
 
-void DeviceStateModelClient::removePoseInput(uint32_t deviceIndex, uint32_t pathID) {
-	std::string path = this->getPathFromIndex(pathID);
-	if (path == "") {
-		return;
-	}
-
+void DeviceStateModelClient::removePoseInput(uint32_t deviceIndex, const std::string& path) {
 	auto it1 = this->poseInputs.find(deviceIndex);
 	if (it1 != this->poseInputs.end()) {
 		it1->second.erase(path);
@@ -302,23 +219,13 @@ void DeviceStateModelClient::removePoseInput(uint32_t deviceIndex, uint32_t path
 	}
 }
 
-void DeviceStateModelClient::notifyListenersPoseInputUpdated(uint32_t deviceIndex, uint32_t pathID, const DeviceInputPoseSerialized oldInput, const DeviceInputPoseSerialized newInput) {
-	const std::string path = this->getPathFromIndex(pathID);
-	if (path == "") {
-		return;
-	}
-
+void DeviceStateModelClient::notifyListenersPoseInputUpdated(uint32_t deviceIndex, const std::string& path, const DeviceInputPoseSerialized oldInput, const DeviceInputPoseSerialized newInput) {
 	for (IDeviceStateEventReciever* listener : this->eventListeners) {
 		listener->DeviceInputPoseChanged(deviceIndex, path, oldInput.value, newInput.value);
 	}
 }
 
-ModelDeviceInputEyeTrackingSerialized* DeviceStateModelClient::getEyeTrackingInput(uint32_t deviceIndex, uint32_t pathID) {
-	std::string path = this->getPathFromIndex(pathID);
-	if (path == "") {
-		return nullptr;
-	}
-
+ModelDeviceInputEyeTrackingSerialized* DeviceStateModelClient::getEyeTrackingInput(uint32_t deviceIndex, const std::string& path) {
 	auto it1 = this->eyeTrackingInputs.find(deviceIndex);
 	if (it1 == this->eyeTrackingInputs.end()) {
 		return nullptr;
@@ -329,25 +236,15 @@ ModelDeviceInputEyeTrackingSerialized* DeviceStateModelClient::getEyeTrackingInp
 	return it2 == it1->second.end() ? nullptr : &(it2->second);
 }
 
-void DeviceStateModelClient::addEyeTrackingInput(uint32_t deviceIndex, uint32_t pathID) {
-	std::string path = this->getPathFromIndex(pathID);
-	if (path == "") {
-		return;
-	}
-
-	auto it = this->eyeTrackingInputs.find(deviceIndex);
-	if (it == this->eyeTrackingInputs.end()) {
+void DeviceStateModelClient::addEyeTrackingInput(uint32_t deviceIndex, const std::string& path) {
+	auto it = this->eyeTrackingInputs[deviceIndex].find(path);
+	if (it == this->eyeTrackingInputs[deviceIndex].end()) {
 		this->eyeTrackingInputs[deviceIndex][path];
 		this->notifyListenersInputAdded(deviceIndex, path, Object_InputEyeTracking);
 	}
 }
 
-void DeviceStateModelClient::removeEyeTrackingInput(uint32_t deviceIndex, uint32_t pathID) {
-	std::string path = this->getPathFromIndex(pathID);
-	if (path == "") {
-		return;
-	}
-
+void DeviceStateModelClient::removeEyeTrackingInput(uint32_t deviceIndex, const std::string& path) {
 	auto it1 = this->eyeTrackingInputs.find(deviceIndex);
 	if (it1 != this->eyeTrackingInputs.end()) {
 		it1->second.erase(path);
@@ -355,27 +252,8 @@ void DeviceStateModelClient::removeEyeTrackingInput(uint32_t deviceIndex, uint32
 	}
 }
 
-void DeviceStateModelClient::notifyListenersEyeTrackingInputUpdated(uint32_t deviceIndex, uint32_t pathID, const DeviceInputEyeTrackingSerialized oldInput, const DeviceInputEyeTrackingSerialized newInput) {
-	const std::string path = this->getPathFromIndex(pathID);
-	if (path == "") {
-		return;
-	}
-
+void DeviceStateModelClient::notifyListenersEyeTrackingInputUpdated(uint32_t deviceIndex, const std::string& path, const DeviceInputEyeTrackingSerialized oldInput, const DeviceInputEyeTrackingSerialized newInput) {
 	for (IDeviceStateEventReciever* listener : this->eventListeners) {
 		listener->DeviceInputEyeTrackingChanged(deviceIndex, path, oldInput.value, newInput.value);
 	}
-}
-
-const std::string DeviceStateModelClient::getPathFromIndex(uint32_t pathID) {
-	auto it = this->pathTable.find(pathID);
-	return it == this->pathTable.end() ? "" : it->second;
-}
-
-uint32_t DeviceStateModelClient::getIndexFromPath(const std::string& path) {
-	for (const auto& entry : this->pathTable) {
-		if (entry.second == path) {
-			return entry.first;
-		}
-	}
-	return static_cast<uint32_t>(-1);
 }

@@ -12,9 +12,8 @@ public:
 	void removeEventListener(IDeviceStateEventReciever& listener);
 
 	// Lifecycle commands
-	bool initialize();
+	int initialize();
 	void notifyClientDisconnect();
-	void pollForDriverUpdates();
 
 	// State commands
 	void setOverridenDevicePose(uint32_t deviceIndex, const DevicePose newPose);

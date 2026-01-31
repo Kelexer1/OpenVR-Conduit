@@ -54,8 +54,8 @@ void Model::removeEyeTrackingInput(uint32_t deviceIndex, const std::string& path
 	this->eyeTrackingInputs[deviceIndex].erase(path);
 }
 
-const std::string Model::toString() {
-	std::string result = "";
+void Model::print() {
+	std::cout << "========== Current State ==========\n";
 	for (uint32_t deviceIndex = 0; deviceIndex < vr::k_unMaxTrackedDeviceCount; deviceIndex++) {
 		// Check if this device has any data
 		bool hasData = devicePoses.find(deviceIndex) != devicePoses.end() ||
@@ -67,12 +67,12 @@ const std::string Model::toString() {
 		
 		if (!hasData) continue;
 		
-		result += "Device " + std::to_string(deviceIndex) + ":\n";
+		std::cout << "Device " + std::to_string(deviceIndex) + ":\n";
 		
 		// Device Pose
 		if (devicePoses.find(deviceIndex) != devicePoses.end()) {
 			const auto& pose = devicePoses.at(deviceIndex);
-			result += "  Pose: pos[" + 
+			std::cout << "  Pose: pos[" + 
 				std::to_string(pose.vecPosition[0]) + ", " +
 				std::to_string(pose.vecPosition[1]) + ", " +
 				std::to_string(pose.vecPosition[2]) + "] valid=" +
@@ -82,7 +82,7 @@ const std::string Model::toString() {
 		// Boolean Inputs
 		if (booleanInputs.find(deviceIndex) != booleanInputs.end()) {
 			for (const auto& [path, input] : booleanInputs.at(deviceIndex)) {
-				result += "  Boolean Input [" + path + "]: " + 
+				std::cout << "  Boolean Input [" + path + "]: " + 
 					(input.value ? "true" : "false") + "\n";
 			}
 		}
@@ -90,7 +90,7 @@ const std::string Model::toString() {
 		// Scalar Inputs
 		if (scalarInputs.find(deviceIndex) != scalarInputs.end()) {
 			for (const auto& [path, input] : scalarInputs.at(deviceIndex)) {
-				result += "  Scalar Input [" + path + "]: " + 
+				std::cout << "  Scalar Input [" + path + "]: " + 
 					std::to_string(input.value) + "\n";
 			}
 		}
@@ -98,7 +98,7 @@ const std::string Model::toString() {
 		// Skeleton Inputs
 		if (skeletonInputs.find(deviceIndex) != skeletonInputs.end()) {
 			for (const auto& [path, input] : skeletonInputs.at(deviceIndex)) {
-				result += "  Skeleton Input [" + path + "]: " + 
+				std::cout << "  Skeleton Input [" + path + "]: " + 
 					std::to_string(input.boneTransformCount) + " bones, range=" +
 					std::to_string(input.motionRange) + "\n";
 			}
@@ -107,7 +107,7 @@ const std::string Model::toString() {
 		// Pose Inputs
 		if (poseInputs.find(deviceIndex) != poseInputs.end()) {
 			for (const auto& [path, input] : poseInputs.at(deviceIndex)) {
-				result += "  Pose Input [" + path + "]: offset=" + 
+				std::cout << "  Pose Input [" + path + "]: offset=" + 
 					std::to_string(input.timeOffset) + "\n";
 			}
 		}
@@ -116,16 +116,15 @@ const std::string Model::toString() {
 		if (eyeTrackingInputs.find(deviceIndex) != eyeTrackingInputs.end()) {
 			for (const auto& [path, input] : eyeTrackingInputs.at(deviceIndex)) {
 				const auto& et = input.eyeTrackingData;
-				result += "  Eye Tracking Input [" + path + "]: active=" + 
+				std::cout << "  Eye Tracking Input [" + path + "]: active=" + 
 					(et.active ? "true" : "false") + " valid=" +
 					(et.valid ? "true" : "false") + " tracked=" +
 					(et.tracked ? "true" : "false") + "\n";
 			}
 		}
 		
-		result += "\n";
+		std::cout << "\n";
 	}
-	return result;
 }
 
 Model::Model() {}

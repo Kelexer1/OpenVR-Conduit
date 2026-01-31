@@ -7,37 +7,37 @@ HINSTANCE HookManager::hModule = nullptr;
 typedef void(*_TrackedDevicePoseUpdated)(void* _this, uint32_t unWhichDevice, const vr::DriverPose_t& newPose, uint32_t unPoseStructSize);
 static _TrackedDevicePoseUpdated originalTrackedDevicePoseUpdated = nullptr;
 
-typedef void(*_CreateBooleanComponent)(void* _this, vr::PropertyContainerHandle_t ulContainer, const char* pchName, vr::VRInputComponentHandle_t* pHandle);
+typedef vr::EVRInputError(*_CreateBooleanComponent)(void* _this, vr::PropertyContainerHandle_t ulContainer, const char* pchName, vr::VRInputComponentHandle_t* pHandle);
 static _CreateBooleanComponent originalCreateBooleanComponent = nullptr;
 
-typedef void(*_UpdateBooleanComponent)(void* _this, vr::VRInputComponentHandle_t ulComponent, bool bNewValue, double fTimeOffset);
+typedef vr::EVRInputError(*_UpdateBooleanComponent)(void* _this, vr::VRInputComponentHandle_t ulComponent, bool bNewValue, double fTimeOffset);
 static _UpdateBooleanComponent originalUpdateBooleanComponent = nullptr;
 
-typedef void(*_CreateScalarComponent)(void* _this, vr::PropertyContainerHandle_t ulContainer, const char* pchName, vr::VRInputComponentHandle_t* pHandle, vr::EVRScalarType eType, vr::EVRScalarUnits eUnits);
+typedef vr::EVRInputError(*_CreateScalarComponent)(void* _this, vr::PropertyContainerHandle_t ulContainer, const char* pchName, vr::VRInputComponentHandle_t* pHandle, vr::EVRScalarType eType, vr::EVRScalarUnits eUnits);
 static _CreateScalarComponent originalCreateScalarComponent = nullptr;
 
-typedef void(*_UpdateScalarComponent)(void* _this, vr::VRInputComponentHandle_t ulComponent, float fNewValue, double fTimeOffset);
+typedef vr::EVRInputError(*_UpdateScalarComponent)(void* _this, vr::VRInputComponentHandle_t ulComponent, float fNewValue, double fTimeOffset);
 static _UpdateScalarComponent originalUpdateScalarComponent = nullptr;
 
-typedef void(*_CreateHapticComponent)(void* _this, vr::PropertyContainerHandle_t ulContainer, const char* pchName, vr::VRInputComponentHandle_t* pHandle);
+typedef vr::EVRInputError(*_CreateHapticComponent)(void* _this, vr::PropertyContainerHandle_t ulContainer, const char* pchName, vr::VRInputComponentHandle_t* pHandle);
 static _CreateHapticComponent originalCreateHapticComponent = nullptr;
 
-typedef void(*_CreateSkeletonComponent)(void* _this, vr::PropertyContainerHandle_t ulContainer, const char* pchName, const char* pchSkeletonPath, const char* pchBasePosePath, vr::EVRSkeletalTrackingLevel eSkeletalTrackingLevel, const vr::VRBoneTransform_t* pGripLimitTransforms, uint32_t unGripLimitTransformCount, vr::VRInputComponentHandle_t* pHandle);
+typedef vr::EVRInputError(*_CreateSkeletonComponent)(void* _this, vr::PropertyContainerHandle_t ulContainer, const char* pchName, const char* pchSkeletonPath, const char* pchBasePosePath, vr::EVRSkeletalTrackingLevel eSkeletalTrackingLevel, const vr::VRBoneTransform_t* pGripLimitTransforms, uint32_t unGripLimitTransformCount, vr::VRInputComponentHandle_t* pHandle);
 static _CreateSkeletonComponent originalCreateSkeletonComponent = nullptr;
 
-typedef void(*_UpdateSkeletonComponent)(void* _this, vr::VRInputComponentHandle_t ulComponent, vr::EVRSkeletalMotionRange eMotionRange, const vr::VRBoneTransform_t* pTransforms, uint32_t unTransformCount);
+typedef vr::EVRInputError(*_UpdateSkeletonComponent)(void* _this, vr::VRInputComponentHandle_t ulComponent, vr::EVRSkeletalMotionRange eMotionRange, const vr::VRBoneTransform_t* pTransforms, uint32_t unTransformCount);
 static _UpdateSkeletonComponent originalUpdateSkeletonComponent = nullptr;
 
-typedef void(*_CreatePoseComponent)(void* _this, vr::PropertyContainerHandle_t ulContainer, const char* pchName, vr::VRInputComponentHandle_t* pHandle);
+typedef vr::EVRInputError(*_CreatePoseComponent)(void* _this, vr::PropertyContainerHandle_t ulContainer, const char* pchName, vr::VRInputComponentHandle_t* pHandle);
 static _CreatePoseComponent originalCreatePoseComponent = nullptr;
 
-typedef void(*_UpdatePoseComponent)(void* _this, vr::VRInputComponentHandle_t ulComponent, const vr::HmdMatrix34_t* pMatPoseOffset, double fTimeOffset);
+typedef vr::EVRInputError(*_UpdatePoseComponent)(void* _this, vr::VRInputComponentHandle_t ulComponent, const vr::HmdMatrix34_t* pMatPoseOffset, double fTimeOffset);
 static _UpdatePoseComponent originalUpdatePoseComponent = nullptr;
 
-typedef void(*_CreateEyeTrackingComponent)(void* _this, vr::PropertyContainerHandle_t ulContainer, const char* pchName, vr::VRInputComponentHandle_t* pHandle);
+typedef vr::EVRInputError(*_CreateEyeTrackingComponent)(void* _this, vr::PropertyContainerHandle_t ulContainer, const char* pchName, vr::VRInputComponentHandle_t* pHandle);
 static _CreateEyeTrackingComponent originalCreateEyeTrackingComponent = nullptr;
 
-typedef void(*_UpdateEyeTrackingComponent)(void* _this, vr::VRInputComponentHandle_t ulComponent, const vr::VREyeTrackingData_t* pEyeTrackingData_t, double fTimeOffset);
+typedef vr::EVRInputError(*_UpdateEyeTrackingComponent)(void* _this, vr::VRInputComponentHandle_t ulComponent, const vr::VREyeTrackingData_t* pEyeTrackingData_t, double fTimeOffset);
 static _UpdateEyeTrackingComponent originalUpdateEyeTrackingComponent = nullptr;
 
 typedef vr::PropertyContainerHandle_t(*_TrackedDeviceToPropertyContainer)(void* _this, vr::TrackedDeviceIndex_t nDevice);
@@ -63,27 +63,30 @@ void overrideTrackedDevicePoseUpdated(void* _this, uint32_t unWhichDevice, const
 	}
 }
 
-void overrideCreateBooleanComponent(void* _this, vr::PropertyContainerHandle_t ulContainer, const char* pchName, vr::VRInputComponentHandle_t* pHandle) {
+vr::EVRInputError overrideCreateBooleanComponent(void* _this, vr::PropertyContainerHandle_t ulContainer, const char* pchName, vr::VRInputComponentHandle_t* pHandle) {
+	// Call the original CreateBooleanComponent()
+	vr::EVRInputError result = vr::VRInputError_None;
+	if (originalCreateBooleanComponent) {
+		result = (originalCreateBooleanComponent)(_this, ulContainer, pchName, pHandle);
+	}
+	
 	// Register component to model
-	DeviceStateModel::getInstance().addDevicePath(pchName);
 	uint32_t deviceIndex = DeviceStateModel::getInstance().getDeviceIndexFromPropertyContainer(ulContainer);
 	
 	if (deviceIndex != static_cast<uint32_t>(-1)) {
 		DeviceStateModel::getInstance().addBooleanInput(deviceIndex, pchName, pHandle);
 	}
 
-	// Call the original CreateBooleanComponent()
-	if (originalCreateBooleanComponent) {
-		(originalCreateBooleanComponent)(_this, ulContainer, pchName, pHandle);
-	}
+	return result;
 }
 
-void overrideUpdateBooleanComponent(void* _this, vr::VRInputComponentHandle_t ulComponent, bool bNewValue, double fTimeOffset) {
+vr::EVRInputError overrideUpdateBooleanComponent(void* _this, vr::VRInputComponentHandle_t ulComponent, bool bNewValue, double fTimeOffset) {
 	ModelDeviceInputBooleanSerialized* input = DeviceStateModel::getInstance().getBooleanInput(ulComponent);
 
 	if (input != nullptr) {
 		input->data.value.value = bNewValue;
 		input->data.value.timeOffset = fTimeOffset;
+		DeviceStateModel::getInstance().setInputBooleanChanged(ulComponent);
 	}
 	
 	if (input && input->useOverridenState) {
@@ -93,31 +96,36 @@ void overrideUpdateBooleanComponent(void* _this, vr::VRInputComponentHandle_t ul
 
 	// Call the original UpdateBooleanComponent()
 	if (originalUpdateBooleanComponent) {
-		(originalUpdateBooleanComponent)(_this, ulComponent, bNewValue, fTimeOffset);
+		return (originalUpdateBooleanComponent)(_this, ulComponent, bNewValue, fTimeOffset);
 	}
+
+	return vr::VRInputError_NoData;
 }
 
-void overrideCreateScalarComponent(void* _this, vr::PropertyContainerHandle_t ulContainer, const char* pchName, vr::VRInputComponentHandle_t* pHandle, vr::EVRScalarType eType, vr::EVRScalarUnits eUnits) {
+vr::EVRInputError overrideCreateScalarComponent(void* _this, vr::PropertyContainerHandle_t ulContainer, const char* pchName, vr::VRInputComponentHandle_t* pHandle, vr::EVRScalarType eType, vr::EVRScalarUnits eUnits) {
+	// Call the original CreateScalarComponent()
+	vr::EVRInputError result = vr::VRInputError_None;
+	if (originalCreateScalarComponent) {
+		result = (originalCreateScalarComponent)(_this, ulContainer, pchName, pHandle, eType, eUnits);
+	}
+	
 	// Register component to model
-	DeviceStateModel::getInstance().addDevicePath(pchName);
 	uint32_t deviceIndex = DeviceStateModel::getInstance().getDeviceIndexFromPropertyContainer(ulContainer);
 
 	if (deviceIndex != static_cast<uint32_t>(-1)) {
 		DeviceStateModel::getInstance().addScalarInput(deviceIndex, pchName, pHandle);
 	}
-	
-	// Call the original CreateScalarComponent()
-	if (originalCreateScalarComponent) {
-		(originalCreateScalarComponent)(_this, ulContainer, pchName, pHandle, eType, eUnits);
-	}
+
+	return result;
 }
 
-void overrideUpdateScalarComponent(void* _this, vr::VRInputComponentHandle_t ulComponent, float fNewValue, double fTimeOffset) {
+vr::EVRInputError overrideUpdateScalarComponent(void* _this, vr::VRInputComponentHandle_t ulComponent, float fNewValue, double fTimeOffset) {
 	ModelDeviceInputScalarSerialized* input = DeviceStateModel::getInstance().getScalarInput(ulComponent);
 
 	if (input != nullptr) {
 		input->data.value.value = fNewValue;
 		input->data.value.timeOffset = fTimeOffset;
+		DeviceStateModel::getInstance().setInputScalarChanged(ulComponent);
 	}
 
 	if (input && input->useOverridenState) {
@@ -127,36 +135,42 @@ void overrideUpdateScalarComponent(void* _this, vr::VRInputComponentHandle_t ulC
 
 	// Call the original UpdateScalarComponent()
 	if (originalUpdateScalarComponent) {
-		(originalUpdateScalarComponent)(_this, ulComponent, fNewValue, fTimeOffset);
+		return (originalUpdateScalarComponent)(_this, ulComponent, fNewValue, fTimeOffset);
 	}
+
+	return vr::VRInputError_NoData;
 }
 
-void overrideCreateHapticComponent(void* _this, vr::PropertyContainerHandle_t ulContainer, const char* pchName, vr::VRInputComponentHandle_t* pHandle) {
+vr::EVRInputError overrideCreateHapticComponent(void* _this, vr::PropertyContainerHandle_t ulContainer, const char* pchName, vr::VRInputComponentHandle_t* pHandle) {
 	// We dont actually store haptic inputs in the model since they can be managed from applications
 	// the hook is just here if its needed in the future, and for consistency
 	
 	// Call the original CreateHapticComponent()
 	if (originalCreateHapticComponent) {
-		(originalCreateHapticComponent)(_this, ulContainer, pchName, pHandle);
+		return (originalCreateHapticComponent)(_this, ulContainer, pchName, pHandle);
 	}
+
+	return vr::VRInputError_NoData;
 }
 
-void overrideCreateSkeletonComponent(void* _this, vr::PropertyContainerHandle_t ulContainer, const char* pchName, const char* pchSkeletonPath, const char* pchBasePosePath, vr::EVRSkeletalTrackingLevel eSkeletalTrackingLevel, const vr::VRBoneTransform_t* pGripLimitTransforms, uint32_t unGripLimitTransformCount, vr::VRInputComponentHandle_t* pHandle) {
+vr::EVRInputError overrideCreateSkeletonComponent(void* _this, vr::PropertyContainerHandle_t ulContainer, const char* pchName, const char* pchSkeletonPath, const char* pchBasePosePath, vr::EVRSkeletalTrackingLevel eSkeletalTrackingLevel, const vr::VRBoneTransform_t* pGripLimitTransforms, uint32_t unGripLimitTransformCount, vr::VRInputComponentHandle_t* pHandle) {
+	// Call the original CreateSkeletonComponent()
+	vr::EVRInputError result = vr::VRInputError_None;
+	if (originalCreateSkeletonComponent) {
+		result = (originalCreateSkeletonComponent)(_this, ulContainer, pchName, pchSkeletonPath, pchBasePosePath, eSkeletalTrackingLevel, pGripLimitTransforms, unGripLimitTransformCount, pHandle);
+	}
+	
 	// Register component to model
-	DeviceStateModel::getInstance().addDevicePath(pchName);
 	uint32_t deviceIndex = DeviceStateModel::getInstance().getDeviceIndexFromPropertyContainer(ulContainer);
 
 	if (deviceIndex != static_cast<uint32_t>(-1)) {
 		DeviceStateModel::getInstance().addSkeletonInput(deviceIndex, pchName, pHandle);
 	}
-	
-	// Call the original CreateSkeletonComponent()
-	if (originalCreateSkeletonComponent) {
-		(originalCreateSkeletonComponent)(_this, ulContainer, pchName, pchSkeletonPath, pchBasePosePath, eSkeletalTrackingLevel, pGripLimitTransforms, unGripLimitTransformCount, pHandle);
-	}
+
+	return result;
 }
 
-void overrideUpdateSkeletonComponent(void* _this, vr::VRInputComponentHandle_t ulComponent, vr::EVRSkeletalMotionRange eMotionRange, const vr::VRBoneTransform_t* pTransforms, uint32_t unTransformCount) {
+vr::EVRInputError overrideUpdateSkeletonComponent(void* _this, vr::VRInputComponentHandle_t ulComponent, vr::EVRSkeletalMotionRange eMotionRange, const vr::VRBoneTransform_t* pTransforms, uint32_t unTransformCount) {
 	ModelDeviceInputSkeletonSerialized* input = DeviceStateModel::getInstance().getSkeletonInput(ulComponent);
 
 	if (input != nullptr) {
@@ -172,6 +186,7 @@ void overrideUpdateSkeletonComponent(void* _this, vr::VRInputComponentHandle_t u
 			input->data.value.boneTransforms[i].orientation.z = pTransforms[i].orientation.z;
 		}
 		input->data.value.boneTransformCount = unTransformCount;
+		DeviceStateModel::getInstance().setInputSkeletonChanged(ulComponent);
 	}
 	
 	if (input && input->useOverridenState) {
@@ -182,26 +197,30 @@ void overrideUpdateSkeletonComponent(void* _this, vr::VRInputComponentHandle_t u
 
 	// Call the original UpdateSkeletonComponent()
 	if (originalUpdateSkeletonComponent) {
-		(originalUpdateSkeletonComponent)(_this, ulComponent, eMotionRange, pTransforms, unTransformCount);
+		return (originalUpdateSkeletonComponent)(_this, ulComponent, eMotionRange, pTransforms, unTransformCount);
 	}
+
+	return vr::VRInputError_NoData;
 }
 
-void overrideCreatePoseComponent(void* _this, vr::PropertyContainerHandle_t ulContainer, const char* pchName, vr::VRInputComponentHandle_t* pHandle) {
+vr::EVRInputError overrideCreatePoseComponent(void* _this, vr::PropertyContainerHandle_t ulContainer, const char* pchName, vr::VRInputComponentHandle_t* pHandle) {
+	// Call the original CreatePoseComponent()
+	vr::EVRInputError result = vr::VRInputError_None;
+	if (originalCreatePoseComponent) {
+		result = (originalCreatePoseComponent)(_this, ulContainer, pchName, pHandle);
+	}
+	
 	// Register component to model
-	DeviceStateModel::getInstance().addDevicePath(pchName);
 	uint32_t deviceIndex = DeviceStateModel::getInstance().getDeviceIndexFromPropertyContainer(ulContainer);
 
 	if (deviceIndex != static_cast<uint32_t>(-1)) {
 		DeviceStateModel::getInstance().addPoseInput(deviceIndex, pchName, pHandle);
 	}
-	
-	// Call the original CreatePoseComponent()
-	if (originalCreatePoseComponent) {
-		(originalCreatePoseComponent)(_this, ulContainer, pchName, pHandle);
-	}
+
+	return result;
 }
 
-void overrideUpdatePoseComponent(void* _this, vr::VRInputComponentHandle_t ulComponent, const vr::HmdMatrix34_t* pMatPoseOffset, double fTimeOffset) {
+vr::EVRInputError overrideUpdatePoseComponent(void* _this, vr::VRInputComponentHandle_t ulComponent, const vr::HmdMatrix34_t* pMatPoseOffset, double fTimeOffset) {
 	ModelDeviceInputPoseSerialized* input = DeviceStateModel::getInstance().getPoseInput(ulComponent);
 
 	if (input != nullptr) {
@@ -213,6 +232,7 @@ void overrideUpdatePoseComponent(void* _this, vr::VRInputComponentHandle_t ulCom
 			}
 		}
 		input->data.value.timeOffset = fTimeOffset;
+		DeviceStateModel::getInstance().setInputPoseChanged(ulComponent);
 	}
 
 	if (input && input->useOverridenState) {
@@ -228,26 +248,30 @@ void overrideUpdatePoseComponent(void* _this, vr::VRInputComponentHandle_t ulCom
 
 	// Call the original UpdatePoseComponent()
 	if (originalUpdatePoseComponent) {
-		(originalUpdatePoseComponent)(_this, ulComponent, pMatPoseOffset, fTimeOffset);
+		return (originalUpdatePoseComponent)(_this, ulComponent, pMatPoseOffset, fTimeOffset);
 	}
+
+	return vr::VRInputError_NoData;
 }
 
-void overrideCreateEyeTrackingComponent(void* _this, vr::PropertyContainerHandle_t ulContainer, const char* pchName, vr::VRInputComponentHandle_t* pHandle) {
+vr::EVRInputError overrideCreateEyeTrackingComponent(void* _this, vr::PropertyContainerHandle_t ulContainer, const char* pchName, vr::VRInputComponentHandle_t* pHandle) {
+	// Call the original CreateEyeTrackingComponent()
+	vr::EVRInputError result = vr::VRInputError_None;
+	if (originalCreateEyeTrackingComponent) {
+		result = (originalCreateEyeTrackingComponent)(_this, ulContainer, pchName, pHandle);
+	}
+	
 	// Register component to model
-	DeviceStateModel::getInstance().addDevicePath(pchName);
 	uint32_t deviceIndex = DeviceStateModel::getInstance().getDeviceIndexFromPropertyContainer(ulContainer);
 
 	if (deviceIndex != static_cast<uint32_t>(-1)) {
 		DeviceStateModel::getInstance().addEyeTrackingInput(deviceIndex, pchName, pHandle);
 	}
-	
-	// Call the original CreateEyeTrackingComponent()
-	if (originalCreateEyeTrackingComponent) {
-		(originalCreateEyeTrackingComponent)(_this, ulContainer, pchName, pHandle);
-	}
+
+	return result;
 }
 
-void overrideUpdateEyeTrackingComponent(void* _this, vr::VRInputComponentHandle_t ulComponent, const vr::VREyeTrackingData_t* pEyeTrackingData_t, double fTimeOffset) {
+vr::EVRInputError overrideUpdateEyeTrackingComponent(void* _this, vr::VRInputComponentHandle_t ulComponent, const vr::VREyeTrackingData_t* pEyeTrackingData_t, double fTimeOffset) {
 	ModelDeviceInputEyeTrackingSerialized* input = DeviceStateModel::getInstance().getEyeTrackingInput(ulComponent);
 
 	if (input != nullptr) {
@@ -259,6 +283,7 @@ void overrideUpdateEyeTrackingComponent(void* _this, vr::VRInputComponentHandle_
 			input->data.value.eyeTrackingData.gazeTarget.v[i] = static_cast<double>(pEyeTrackingData_t->vGazeTarget.v[i]);
 		}
 		input->data.value.timeOffset = fTimeOffset;
+		DeviceStateModel::getInstance().setInputEyeTrackingChanged(ulComponent);
 	}
 	
 	if (input && input->useOverridenState) {
@@ -276,8 +301,10 @@ void overrideUpdateEyeTrackingComponent(void* _this, vr::VRInputComponentHandle_
 
 	// Call the original UpdateEyeTrackingComponent()
 	if (originalUpdateEyeTrackingComponent) {
-		(originalUpdateEyeTrackingComponent)(_this, ulComponent, pEyeTrackingData_t, fTimeOffset);
+		return (originalUpdateEyeTrackingComponent)(_this, ulComponent, pEyeTrackingData_t, fTimeOffset);
 	}
+
+	return vr::VRInputError_NoData;
 }
 
 vr::PropertyContainerHandle_t overrideTrackedDeviceToPropertyContainer(void* _this, vr::TrackedDeviceIndex_t nDevice) {

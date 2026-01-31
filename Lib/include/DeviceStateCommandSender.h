@@ -12,7 +12,7 @@ public:
 	void removeEventListener(IDeviceStateEventReciever& listener);
 
 	// Lifecycle commands
-	bool initialize();
+	int initialize();
 	void notifyClientDisconnect();
 
 	// State commands

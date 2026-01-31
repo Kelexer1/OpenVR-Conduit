@@ -8,19 +8,11 @@
 #include "ObjectSchemas.h"
 #include "DeviceStateModelClient.h"
 
-extern const char* SHM_NAME;
-extern const uint32_t PATH_TABLE_ENTRIES;
-extern const size_t LANE_SIZE;
-extern const size_t SHARED_MEMORY_SIZE;
-extern const uint32_t PROTOCOL_VERSION;
-
 class SharedDeviceMemoryClient {
 public:
 	static SharedDeviceMemoryClient& getInstance();
 
 	int initialize();
-
-	bool getInitialized();
 
 	void issueCommandToSharedMemory(ClientCommandType type, uint32_t deviceIndex, void* paramsStart, uint32_t paramsSize);
 
@@ -29,10 +21,6 @@ private:
 
 	HANDLE sharedMemoryHandle;
 	void* sharedMemory;
-
-	uint32_t pathTableStart;
-	uint32_t pathTableSize;
-	uint64_t pathTableReadCount;
 
 	uint32_t driverClientLaneStart;
 	uint32_t driverClientLaneReadOffset;
@@ -45,8 +33,7 @@ private:
 	SharedDeviceMemoryClient() = default;
 
 	void writePacketToClientDriverLane(void* packet, uint32_t packetSize);
-	std::unique_ptr<uint8_t[]> readPacketFromDriverClientLane(uint32_t packetSize);
-	std::unique_ptr<uint8_t[]> readEntryFromPathTable(uint32_t pathID);
+	std::pair<ObjectEntryData, std::pair<ObjectType, std::unique_ptr<uint8_t[]>>> readPacketFromDriverClientLane();
 	bool isValidObjectPacket(const ObjectEntry* entry, const SharedMemoryHeader* header);
 
 	void pollForDriverUpdates();

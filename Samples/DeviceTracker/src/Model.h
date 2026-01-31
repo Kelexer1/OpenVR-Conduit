@@ -2,6 +2,7 @@
 #include "DeviceTypes.h"
 #include <unordered_map>
 #include <string>
+#include <iostream>
 
 class Model {
 public:
@@ -25,7 +26,7 @@ public:
 	void updateEyeTrackingInput(uint32_t deviceIndex, const std::string& path, EyeTrackingInput newInput);
 	void removeEyeTrackingInput(uint32_t deviceIndex, const std::string& path);
 
-	const std::string toString();
+	void print();
 private:
 	Model();
 
