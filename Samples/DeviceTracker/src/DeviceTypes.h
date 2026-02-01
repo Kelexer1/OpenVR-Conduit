@@ -97,7 +97,7 @@ struct BooleanInput {
 };
 
 struct ScalarInput {
-	double value;
+	float value;
 	double timeOffset;
 };
 

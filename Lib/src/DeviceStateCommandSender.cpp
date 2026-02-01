@@ -77,8 +77,7 @@ void DeviceStateCommandSender::setOverridenBooleanInputState(uint32_t deviceInde
 	}
 
 	CommandParams_SetOverridenStateDeviceInputBoolean params = {};
-	strncpy_s(params.inputPath, path.c_str(), sizeof(params.inputPath));
-	params.inputPath[sizeof(params.inputPath) - 1] = '\0';
+	params.inputPathOffset = SharedDeviceMemoryClient::getInstance().getOffsetOfPath(path);
 	params.overridenValue = newInput;
 	SharedDeviceMemoryClient::getInstance().issueCommandToSharedMemory(
 		Command_SetOverridenStateDeviceInputBoolean, deviceIndex, &params, sizeof(CommandParams_SetOverridenStateDeviceInputBoolean)
@@ -110,8 +109,7 @@ void DeviceStateCommandSender::setUseOverridenBooleanInputState(uint32_t deviceI
 	}
 
 	CommandParams_SetUseOverridenStateDeviceInput params = {};
-	strncpy_s(params.inputPath, path.c_str(), sizeof(params.inputPath));
-	params.inputPath[sizeof(params.inputPath) - 1] = '\0';
+	params.inputPathOffset = SharedDeviceMemoryClient::getInstance().getOffsetOfPath(path);
 	params.useOverridenState = useOverridenState;
 	SharedDeviceMemoryClient::getInstance().issueCommandToSharedMemory(
 		Command_SetUseOverridenStateDeviceInput, deviceIndex, &params, sizeof(CommandParams_SetUseOverridenStateDeviceInput)
@@ -134,8 +132,7 @@ void DeviceStateCommandSender::setOverridenScalarInputState(uint32_t deviceIndex
 	}
 
 	CommandParams_SetOverridenStateDeviceInputScalar params = {};
-	strncpy_s(params.inputPath, path.c_str(), sizeof(params.inputPath));
-	params.inputPath[sizeof(params.inputPath) - 1] = '\0';
+	params.inputPathOffset = SharedDeviceMemoryClient::getInstance().getOffsetOfPath(path);
 	params.overridenValue = newInput;
 	SharedDeviceMemoryClient::getInstance().issueCommandToSharedMemory(
 		Command_SetOverridenStateDeviceInputScalar, deviceIndex, &params, sizeof(CommandParams_SetOverridenStateDeviceInputScalar)
@@ -167,8 +164,7 @@ void DeviceStateCommandSender::setUseOverridenScalarInputState(uint32_t deviceIn
 	}
 
 	CommandParams_SetUseOverridenStateDeviceInput params = {};
-	strncpy_s(params.inputPath, path.c_str(), sizeof(params.inputPath));
-	params.inputPath[sizeof(params.inputPath) - 1] = '\0';
+	params.inputPathOffset = SharedDeviceMemoryClient::getInstance().getOffsetOfPath(path);
 	params.useOverridenState = useOverridenState;
 	SharedDeviceMemoryClient::getInstance().issueCommandToSharedMemory(
 		Command_SetUseOverridenStateDeviceInput, deviceIndex, &params, sizeof(CommandParams_SetUseOverridenStateDeviceInput)
@@ -191,8 +187,7 @@ void DeviceStateCommandSender::setOverridenSkeletonInputState(uint32_t deviceInd
 	}
 
 	CommandParams_SetOverridenStateDeviceInputSkeleton params = {};
-	strncpy_s(params.inputPath, path.c_str(), sizeof(params.inputPath));
-	params.inputPath[sizeof(params.inputPath) - 1] = '\0';
+	params.inputPathOffset = SharedDeviceMemoryClient::getInstance().getOffsetOfPath(path);
 	params.overridenValue = newInput;
 	SharedDeviceMemoryClient::getInstance().issueCommandToSharedMemory(
 		Command_SetOverridenStateDeviceInputSkeleton, deviceIndex, &params, sizeof(CommandParams_SetOverridenStateDeviceInputSkeleton)
@@ -224,8 +219,7 @@ void DeviceStateCommandSender::setUseOverridenSkeletonInputState(uint32_t device
 	}
 
 	CommandParams_SetUseOverridenStateDeviceInput params = {};
-	strncpy_s(params.inputPath, path.c_str(), sizeof(params.inputPath));
-	params.inputPath[sizeof(params.inputPath) - 1] = '\0';
+	params.inputPathOffset = SharedDeviceMemoryClient::getInstance().getOffsetOfPath(path);
 	params.useOverridenState = useOverridenState;
 	SharedDeviceMemoryClient::getInstance().issueCommandToSharedMemory(
 		Command_SetUseOverridenStateDeviceInput, deviceIndex, &params, sizeof(CommandParams_SetUseOverridenStateDeviceInput)
@@ -248,8 +242,7 @@ void DeviceStateCommandSender::setOverridenPoseInputState(uint32_t deviceIndex, 
 	}
 
 	CommandParams_SetOverridenStateDeviceInputPose params = {};
-	strncpy_s(params.inputPath, path.c_str(), sizeof(params.inputPath));
-	params.inputPath[sizeof(params.inputPath) - 1] = '\0';
+	params.inputPathOffset = SharedDeviceMemoryClient::getInstance().getOffsetOfPath(path);
 	params.overridenValue = newInput;
 	SharedDeviceMemoryClient::getInstance().issueCommandToSharedMemory(
 		Command_SetOverridenStateDeviceInputPose, deviceIndex, &params, sizeof(CommandParams_SetOverridenStateDeviceInputPose)
@@ -281,8 +274,7 @@ void DeviceStateCommandSender::setUseOverridenPoseInputState(uint32_t deviceInde
 	}
 
 	CommandParams_SetUseOverridenStateDeviceInput params = {};
-	strncpy_s(params.inputPath, path.c_str(), sizeof(params.inputPath));
-	params.inputPath[sizeof(params.inputPath) - 1] = '\0';
+	params.inputPathOffset = SharedDeviceMemoryClient::getInstance().getOffsetOfPath(path);
 	params.useOverridenState = useOverridenState;
 	SharedDeviceMemoryClient::getInstance().issueCommandToSharedMemory(
 		Command_SetUseOverridenStateDeviceInput, deviceIndex, &params, sizeof(CommandParams_SetUseOverridenStateDeviceInput)
@@ -305,8 +297,7 @@ void DeviceStateCommandSender::setOverridenEyeTrackingInputState(uint32_t device
 	}
 
 	CommandParams_SetOverridenStateDeviceInputEyeTracking params = {};
-	strncpy_s(params.inputPath, path.c_str(), sizeof(params.inputPath));
-	params.inputPath[sizeof(params.inputPath) - 1] = '\0';
+	params.inputPathOffset = SharedDeviceMemoryClient::getInstance().getOffsetOfPath(path);
 	params.overridenValue = newInput;
 	SharedDeviceMemoryClient::getInstance().issueCommandToSharedMemory(
 		Command_SetOverridenStateDeviceInputEyeTracking, deviceIndex, &params, sizeof(CommandParams_SetOverridenStateDeviceInputEyeTracking)
@@ -338,8 +329,7 @@ void DeviceStateCommandSender::setUseOverridenEyeTrackingInputState(uint32_t dev
 	}
 
 	CommandParams_SetUseOverridenStateDeviceInput params = {};
-	strncpy_s(params.inputPath, path.c_str(), sizeof(params.inputPath));
-	params.inputPath[sizeof(params.inputPath) - 1] = '\0';
+	params.inputPathOffset = SharedDeviceMemoryClient::getInstance().getOffsetOfPath(path);
 	params.useOverridenState = useOverridenState;
 	SharedDeviceMemoryClient::getInstance().issueCommandToSharedMemory(
 		Command_SetUseOverridenStateDeviceInput, deviceIndex, &params, sizeof(CommandParams_SetUseOverridenStateDeviceInput)

@@ -1,7 +1,7 @@
 #include "SharedDeviceMemoryClient.h"
 #include <iostream>
 
-const uint32_t PROTOCOL_VERSION = 4;
+const uint32_t PROTOCOL_VERSION = 5;
 
 SharedDeviceMemoryClient& SharedDeviceMemoryClient::getInstance() {
 	static SharedDeviceMemoryClient instance;
@@ -28,6 +28,8 @@ int SharedDeviceMemoryClient::initialize() {
 			return 3;
 		}
 
+		this->pathTableStart = header->pathTableStart;
+
 		this->driverClientLaneStart = header->driverClientLaneStart;
 		//this->driverClientLaneReadOffset = header->driverClientWriteOffset;
 		//this->driverClientLaneReadCount = header->driverClientWriteCount;
@@ -44,8 +46,57 @@ int SharedDeviceMemoryClient::initialize() {
 	return 0;
 }
 
+std::string SharedDeviceMemoryClient::getPathFromPathOffset(uint32_t offset) {
+	uint8_t* pathTableStart = static_cast<uint8_t*>(this->sharedMemory) + this->pathTableStart;
+
+	SharedMemoryHeader* headerPtr = reinterpret_cast<SharedMemoryHeader*>(this->sharedMemory);
+	while (headerPtr->pathTableWritingOffset.load(std::memory_order_acquire) == offset) {} // Wait for offset to finish writing if required
+
+	const char* path = reinterpret_cast<const char*>(pathTableStart + offset);
+
+	uint32_t len;
+	for (len = 0; len < MAX_PATH_LENGTH; len++) {
+		if (path[len] == '\0') break;
+	}
+
+	if (len == MAX_PATH_LENGTH) {
+		return std::string();
+	}
+
+	return std::string(path);
+}
+
+uint32_t SharedDeviceMemoryClient::getOffsetOfPath(const std::string& path) {
+	SharedMemoryHeader* headerPtr = reinterpret_cast<SharedMemoryHeader*>(this->sharedMemory);
+
+	auto tablePath = this->pathTableOffsets.find(path);
+	if (tablePath != this->pathTableOffsets.end()) return tablePath->second;
+
+	uint8_t* pathTableStart = static_cast<uint8_t*>(this->sharedMemory) + this->pathTableStart;
+
+	uint32_t searchOffset = 0;
+	while (searchOffset < PATH_TABLE_SIZE) {
+		// Wait for driver to finish writing
+		while (headerPtr->pathTableWritingOffset.load(std::memory_order_acquire) == searchOffset) {}
+
+		const char* currentPath = reinterpret_cast<const char*>(pathTableStart + searchOffset);
+		size_t len = strnlen(currentPath, MAX_PATH_LENGTH);
+
+		if (len == 0 || len == MAX_PATH_LENGTH) break;
+
+		if (path == std::string(currentPath)) {
+			this->pathTableOffsets[path] = searchOffset;
+			return searchOffset;
+		}
+
+		searchOffset += static_cast<uint32_t>(len) + 1;
+	}
+
+	return UINT32_MAX;
+}
+
 void SharedDeviceMemoryClient::pollForDriverUpdates() {
-	SharedMemoryHeader* headerPtr = static_cast<SharedMemoryHeader*>(this->sharedMemory);
+	SharedMemoryHeader* headerPtr = reinterpret_cast<SharedMemoryHeader*>(this->sharedMemory);
 	DeviceStateModelClient& model = DeviceStateModelClient::getInstance();
 
 	// Driver -> Client lane updates
@@ -64,7 +115,7 @@ void SharedDeviceMemoryClient::pollForDriverUpdates() {
 			std::unique_ptr<uint8_t[]>& dataBuf = packet.second.second;
 
 			uint32_t deviceIndex = entry.deviceIndex;
-			std::string path(entry.inputPath);
+			std::string path(this->getPathFromPathOffset(entry.inputPathOffset));
 
 			switch (entry.type) {
 				case Object_DevicePose: {
@@ -231,7 +282,7 @@ void SharedDeviceMemoryClient::issueCommandToSharedMemory(ClientCommandType type
 	ClientCommandHeader zero = {};
 	this->writePacketToClientDriverLane(&zero, sizeof(ClientCommandHeader));
 
-    SharedMemoryHeader* headerPtr = static_cast<SharedMemoryHeader*>(this->sharedMemory);
+    SharedMemoryHeader* headerPtr = reinterpret_cast<SharedMemoryHeader*>(this->sharedMemory);
     this->clientDriverLaneWriteCount++;
     headerPtr->clientDriverWriteCount++;
     headerPtr->clientDriverWriteOffset = this->clientDriverLaneWriteOffset;
@@ -239,7 +290,7 @@ void SharedDeviceMemoryClient::issueCommandToSharedMemory(ClientCommandType type
 
 void SharedDeviceMemoryClient::writePacketToClientDriverLane(void* packet, uint32_t packetSize) {
 	if (packet != nullptr && packetSize > 0) {
-		SharedMemoryHeader* headerPtr = static_cast<SharedMemoryHeader*>(this->sharedMemory);
+		SharedMemoryHeader* headerPtr = reinterpret_cast<SharedMemoryHeader*>(this->sharedMemory);
 
 		uint32_t readOffset = headerPtr->clientDriverReadOffset;
 		uint32_t writeOffset = this->clientDriverLaneWriteOffset;
@@ -278,12 +329,12 @@ void SharedDeviceMemoryClient::writePacketToClientDriverLane(void* packet, uint3
 }
 
 std::pair<ObjectEntryData, std::pair<ObjectType, std::unique_ptr<uint8_t[]>>> SharedDeviceMemoryClient::readPacketFromDriverClientLane() {
-    SharedMemoryHeader* headerPtr = static_cast<SharedMemoryHeader*>(this->sharedMemory);    
+    SharedMemoryHeader* headerPtr = reinterpret_cast<SharedMemoryHeader*>(this->sharedMemory);    
 	
 	if (this->driverClientLaneReadOffset >= LANE_SIZE - LANE_PADDING_SIZE) this->driverClientLaneReadOffset = 0;
 
 	uint32_t writeOffset = headerPtr->driverClientWriteOffset.load(std::memory_order_acquire);
-	if (this->driverClientLaneReadOffset == writeOffset) return { ObjectEntryData{}, {Object_DevicePose, nullptr} };
+	if (this->driverClientLaneReadOffset == writeOffset) return { ObjectEntryData{}, { Object_DevicePose, nullptr } };
 
     // Read ObjectEntry
 	uint8_t* laneStart = static_cast<uint8_t*>(this->sharedMemory) + this->driverClientLaneStart;
@@ -322,19 +373,13 @@ std::pair<ObjectEntryData, std::pair<ObjectType, std::unique_ptr<uint8_t[]>>> Sh
 		}
 	}
 
-	uint32_t spinCount = 0;
-	while (!rawEntry->committed.load(std::memory_order_acquire)) {
-		spinCount++;
-		if (spinCount >= 1000000) {
-			std::cout << "Waiting on packet commitment: " << spinCount << "\n";
-		}
-	} // Wait for packet to be valid
+	while (!rawEntry->committed.load(std::memory_order_acquire)) {} // Wait for packet to be valid
 
 	ObjectEntryData entry;
 	entry.successful = true;
 	entry.type = rawEntry->type;
 	entry.deviceIndex = rawEntry->deviceIndex;
-	memcpy(entry.inputPath, rawEntry->inputPath, sizeof(entry.inputPath));
+	entry.inputPathOffset = rawEntry->inputPathOffset;
 	entry.version = rawEntry->version;
 	entry.valid = rawEntry->valid;
 
@@ -380,27 +425,19 @@ bool SharedDeviceMemoryClient::isValidObjectPacket(const ObjectEntry* entry, con
 
 	// Valid characters are [a-z]+[A-Z]+[/]
 	if (entry->type != Object_DevicePose) {
-		const size_t MAX_PATH_LENGTH = sizeof(entry->inputPath);
-		bool nullTerminated = false;
-		
+		std::string inputPath = this->getPathFromPathOffset(entry->inputPathOffset);
+
 		for (size_t i = 0; i < MAX_PATH_LENGTH; i++) {
-			char c = entry->inputPath[i];
+			char c = inputPath[i];
 			
-			if (c == '\0') {
-				nullTerminated = true;
-				break;
-			}
-			
+			if (c == '\0') break;
+
 			if (!((c >= 'a' && c <= 'z') || 
 			      (c >= 'A' && c <= 'Z') || 
 			      (c >= '0' && c <= '9') || 
 			      c == '/')) {
 				return false;
 			}
-		}
-		
-		if (!nullTerminated) {
-			return false;
 		}
 	}
 

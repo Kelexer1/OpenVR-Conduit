@@ -16,11 +16,18 @@ public:
 
 	void issueCommandToSharedMemory(ClientCommandType type, uint32_t deviceIndex, void* paramsStart, uint32_t paramsSize);
 
+	std::string getPathFromPathOffset(uint32_t offset);
+	uint32_t getOffsetOfPath(const std::string& path);
+
 private:
 	bool initialized;
 
 	HANDLE sharedMemoryHandle;
 	void* sharedMemory;
+
+	uint32_t pathTableStart;
+
+	std::unordered_map<std::string, uint32_t> pathTableOffsets;
 
 	uint32_t driverClientLaneStart;
 	uint32_t driverClientLaneReadOffset;

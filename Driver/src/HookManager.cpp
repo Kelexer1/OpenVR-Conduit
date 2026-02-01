@@ -73,7 +73,7 @@ vr::EVRInputError overrideCreateBooleanComponent(void* _this, vr::PropertyContai
 	// Register component to model
 	uint32_t deviceIndex = DeviceStateModel::getInstance().getDeviceIndexFromPropertyContainer(ulContainer);
 	
-	if (deviceIndex != static_cast<uint32_t>(-1)) {
+	if (deviceIndex != UINT32_MAX) {
 		DeviceStateModel::getInstance().addBooleanInput(deviceIndex, pchName, pHandle);
 	}
 
@@ -112,7 +112,7 @@ vr::EVRInputError overrideCreateScalarComponent(void* _this, vr::PropertyContain
 	// Register component to model
 	uint32_t deviceIndex = DeviceStateModel::getInstance().getDeviceIndexFromPropertyContainer(ulContainer);
 
-	if (deviceIndex != static_cast<uint32_t>(-1)) {
+	if (deviceIndex != UINT32_MAX) {
 		DeviceStateModel::getInstance().addScalarInput(deviceIndex, pchName, pHandle);
 	}
 
@@ -163,7 +163,7 @@ vr::EVRInputError overrideCreateSkeletonComponent(void* _this, vr::PropertyConta
 	// Register component to model
 	uint32_t deviceIndex = DeviceStateModel::getInstance().getDeviceIndexFromPropertyContainer(ulContainer);
 
-	if (deviceIndex != static_cast<uint32_t>(-1)) {
+	if (deviceIndex != UINT32_MAX) {
 		DeviceStateModel::getInstance().addSkeletonInput(deviceIndex, pchName, pHandle);
 	}
 
@@ -213,7 +213,7 @@ vr::EVRInputError overrideCreatePoseComponent(void* _this, vr::PropertyContainer
 	// Register component to model
 	uint32_t deviceIndex = DeviceStateModel::getInstance().getDeviceIndexFromPropertyContainer(ulContainer);
 
-	if (deviceIndex != static_cast<uint32_t>(-1)) {
+	if (deviceIndex != UINT32_MAX) {
 		DeviceStateModel::getInstance().addPoseInput(deviceIndex, pchName, pHandle);
 	}
 
@@ -264,7 +264,7 @@ vr::EVRInputError overrideCreateEyeTrackingComponent(void* _this, vr::PropertyCo
 	// Register component to model
 	uint32_t deviceIndex = DeviceStateModel::getInstance().getDeviceIndexFromPropertyContainer(ulContainer);
 
-	if (deviceIndex != static_cast<uint32_t>(-1)) {
+	if (deviceIndex != UINT32_MAX) {
 		DeviceStateModel::getInstance().addEyeTrackingInput(deviceIndex, pchName, pHandle);
 	}
 

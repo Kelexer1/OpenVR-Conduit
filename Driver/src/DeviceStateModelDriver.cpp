@@ -20,7 +20,7 @@ uint32_t DeviceStateModel::getDeviceIndexFromPropertyContainer(vr::PropertyConta
 		}
 	}
 
-	return static_cast<uint32_t>(-1);
+	return UINT32_MAX;
 }
 
 vr::PropertyContainerHandle_t* DeviceStateModel::getPropertyContainerFromDeviceIndex(uint32_t deviceIndex) {

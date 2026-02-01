@@ -29,6 +29,11 @@ private:
 	HANDLE sharedMemoryHandle;
 	void* sharedMemory;
 
+	uint32_t pathTableStart;
+
+	std::unordered_map<std::string, uint32_t> pathTableOffsets;
+	uint32_t currentPathTableWriteOffset;
+
 	uint32_t driverClientLaneStart;
 	uint32_t driverClientLaneWriteOffset; // By byte offset since entries vary in size
 	uint64_t driverClientLaneWriteCount;
@@ -40,6 +45,8 @@ private:
 	SharedDeviceMemoryDriver() = default;
 
 	bool initializeSharedMemoryData();
+
+	uint32_t getOffsetOfPath(const std::string& inputPath);
 
 	void writePacketToDriverClientLane(void* packet, uint32_t packetSize);
 	std::unique_ptr<uint8_t[]> readPacketFromClientDriverLane(uint32_t packetSize);

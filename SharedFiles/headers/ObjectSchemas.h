@@ -6,9 +6,10 @@
 
 inline const uint32_t NUM_OBJECT_TYPES = 6U;
 inline const uint32_t ALIGNMENT_CONSTANT = 0x4F424A45U;
-inline const uint32_t MAX_INPUT_PATH_LENGTH = 256U;
 
 inline const char* SHM_NAME = "Local\\ConduitSharedDeviceMemory";
+inline const uint32_t PATH_TABLE_SIZE = 1024U * 5U;
+inline const uint32_t MAX_PATH_LENGTH = 256U;
 inline const uint32_t LANE_SIZE = 1048576U * 5U;		// 5mb
 inline const uint32_t LANE_PADDING_SIZE = 1024U * 5U;	// 5kb
 
@@ -39,6 +40,10 @@ enum ClientCommandType {
 struct SharedMemoryHeader {
 	uint32_t protocolVersion;
 
+	uint32_t pathTableStart;
+	uint32_t pathTableSize;
+	std::atomic<uint32_t> pathTableWritingOffset; // 0 if not writing, offset in path table being written otherwise
+
 	uint32_t driverClientLaneStart;
 	uint32_t driverClientLaneSize;
 	std::atomic<uint64_t> driverClientWriteCount;	// Client keeps its own last consumed write count to track updates
@@ -58,7 +63,7 @@ struct ObjectEntry {
 	ObjectType type;
 
 	uint32_t deviceIndex;
-	char inputPath[MAX_INPUT_PATH_LENGTH];
+	uint32_t inputPathOffset;
 
 	uint64_t version;
 	bool valid;
@@ -116,32 +121,32 @@ struct CommandParams_SetOverridenStateDevicePose {
 
 struct CommandParams_SetUseOverridenStateDeviceInput {
 	bool useOverridenState;
-	char inputPath[MAX_INPUT_PATH_LENGTH];
+	uint32_t inputPathOffset;
 };
 
 struct CommandParams_SetOverridenStateDeviceInputBoolean {
 	BooleanInput overridenValue;
-	char inputPath[MAX_INPUT_PATH_LENGTH];
+	uint32_t inputPathOffset;
 };
 
 struct CommandParams_SetOverridenStateDeviceInputScalar {
 	ScalarInput overridenValue;
-	char inputPath[MAX_INPUT_PATH_LENGTH];
+	uint32_t inputPathOffset;
 };
 
 struct CommandParams_SetOverridenStateDeviceInputSkeleton {
 	SkeletonInput overridenValue;
-	char inputPath[MAX_INPUT_PATH_LENGTH];
+	uint32_t inputPathOffset;
 };
 
 struct CommandParams_SetOverridenStateDeviceInputPose {
 	PoseInput overridenValue;
-	char inputPath[MAX_INPUT_PATH_LENGTH];
+	uint32_t inputPathOffset;
 };
 
 struct CommandParams_SetOverridenStateDeviceInputEyeTracking {
 	EyeTrackingInput overridenValue;
-	char inputPath[MAX_INPUT_PATH_LENGTH];
+	uint32_t inputPathOffset;
 };
 
 #pragma pack(pop)
@@ -152,7 +157,7 @@ struct ObjectEntryData {
 	ObjectType type;
 	uint32_t deviceIndex;
 	uint64_t version;
-	char inputPath[MAX_INPUT_PATH_LENGTH];
+	uint32_t inputPathOffset;
 };
 
 struct ModelObjectState {
