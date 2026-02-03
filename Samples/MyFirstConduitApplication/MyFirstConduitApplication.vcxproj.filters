@@ -18,12 +18,12 @@
     <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ControllerEventListener.cpp">
+    <ClCompile Include="src\MyEventReciever.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="headers\ControllerEventListener.h">
+    <ClInclude Include="src\MyEventReciever.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

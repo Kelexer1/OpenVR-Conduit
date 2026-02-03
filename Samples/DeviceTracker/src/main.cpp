@@ -1,26 +1,23 @@
 #include "DeviceStateCommandSender.h"
 #include "Model.h"
-#include "StateEventReciever.h"
 
 #include <chrono>
 #include <thread>
 
 int main() {
     DeviceStateCommandSender commandSender;
-    int code = commandSender.initialize();
-    if (code != 0) {
-        printf("Failed to initialize Conduit with code %d", code);
+    int initCode = commandSender.initialize();
+    if (initCode != 0) {
+        std::cout << "Failed to initialize Conduit with code " << initCode;
         while (true) {} // Prevent console from auto closing
     }
 
-    StateEventReciever eventReceiver;
-    commandSender.addEventListener(eventReceiver);
+    Model model(commandSender);
+    commandSender.addEventListener(model);
     
     while (true) {
         system("cls");
-
-        Model::getInstance().print();
-
+        model.print();
         std::this_thread::sleep_for(std::chrono::milliseconds(16)); // 60hz
     }
     

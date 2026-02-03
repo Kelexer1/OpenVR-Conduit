@@ -66,6 +66,7 @@ struct ObjectEntry {
 	uint32_t inputPathOffset;
 
 	uint64_t version;
+
 	bool valid;
 
 	std::atomic<bool> committed;
@@ -109,6 +110,8 @@ struct ClientCommandHeader {
 	uint32_t deviceIndex;
 
 	uint64_t version;
+
+	std::atomic<bool> committed;
 };
 
 struct CommandParams_SetUseOverridenStateDevicePose {
@@ -158,6 +161,13 @@ struct ObjectEntryData {
 	uint32_t deviceIndex;
 	uint64_t version;
 	uint32_t inputPathOffset;
+};
+
+struct ClientCommandHeaderData {
+	bool successful;
+	ClientCommandType type;
+	uint32_t deviceIndex;
+	uint64_t version;
 };
 
 struct ModelObjectState {

@@ -31,12 +31,8 @@ int SharedDeviceMemoryClient::initialize() {
 		this->pathTableStart = header->pathTableStart;
 
 		this->driverClientLaneStart = header->driverClientLaneStart;
-		//this->driverClientLaneReadOffset = header->driverClientWriteOffset;
-		//this->driverClientLaneReadCount = header->driverClientWriteCount;
 
 		this->clientDriverLaneStart = header->clientDriverLaneStart;
-		//this->clientDriverLaneWriteOffset = header->clientDriverWriteOffset;
-		//this->clientDriverLaneWriteCount = header->clientDriverWriteCount;
 
 		std::thread(&SharedDeviceMemoryClient::pollLoop, this).detach();
 
@@ -271,61 +267,76 @@ void SharedDeviceMemoryClient::pollLoop() {
 }
 
 void SharedDeviceMemoryClient::issueCommandToSharedMemory(ClientCommandType type, uint32_t deviceIndex, void* paramsStart, uint32_t paramsSize) {
-    ClientCommandHeader header = {};
-    header.type = type;
-    header.deviceIndex = deviceIndex;
-    header.version = this->clientDriverLaneWriteCount;
+	uint32_t totalSize = 0;
+	switch (type) {
+	case Command_SetUseOverridenStateDevicePose:
+		totalSize = sizeof(CommandParams_SetUseOverridenStateDevicePose); break;
+	case Command_SetOverridenStateDevicePose:
+		totalSize = sizeof(CommandParams_SetOverridenStateDevicePose); break;
+	case Command_SetUseOverridenStateDeviceInput:
+		totalSize = sizeof(CommandParams_SetUseOverridenStateDeviceInput); break;
+	case Command_SetOverridenStateDeviceInputBoolean:
+		totalSize = sizeof(CommandParams_SetOverridenStateDeviceInputBoolean); break;
+	case Command_SetOverridenStateDeviceInputScalar:
+		totalSize = sizeof(CommandParams_SetOverridenStateDeviceInputScalar); break;
+	case Command_SetOverridenStateDeviceInputSkeleton:
+		totalSize = sizeof(CommandParams_SetOverridenStateDeviceInputSkeleton); break;
+	case Command_SetOverridenStateDeviceInputPose:
+		totalSize = sizeof(CommandParams_SetOverridenStateDeviceInputPose); break;
+	case Command_SetOverridenStateDeviceInputEyeTracking:
+		totalSize = sizeof(CommandParams_SetOverridenStateDeviceInputEyeTracking); break;
+	}
+	totalSize += sizeof(ClientCommandHeader);
+	std::vector<uint8_t> buffer(totalSize);
 
-    this->writePacketToClientDriverLane(&header, sizeof(ClientCommandHeader));
-    this->writePacketToClientDriverLane(paramsStart, paramsSize);
+	ClientCommandHeader* header = reinterpret_cast<ClientCommandHeader*>(buffer.data());
+	header->alignmentCheck = ALIGNMENT_CONSTANT;
+    header->type = type;
+    header->deviceIndex = deviceIndex;
+    header->version = this->clientDriverLaneWriteCount;
+	header->committed.store(false, std::memory_order_relaxed);
 
-	ClientCommandHeader zero = {};
-	this->writePacketToClientDriverLane(&zero, sizeof(ClientCommandHeader));
+	memcpy(buffer.data() + sizeof(ClientCommandHeader), paramsStart, paramsSize);
 
-    SharedMemoryHeader* headerPtr = reinterpret_cast<SharedMemoryHeader*>(this->sharedMemory);
-    this->clientDriverLaneWriteCount++;
-    headerPtr->clientDriverWriteCount++;
-    headerPtr->clientDriverWriteOffset = this->clientDriverLaneWriteOffset;
+	this->writePacketToClientDriverLane(buffer.data(), totalSize);
 }
 
 void SharedDeviceMemoryClient::writePacketToClientDriverLane(void* packet, uint32_t packetSize) {
-	if (packet != nullptr && packetSize > 0) {
-		SharedMemoryHeader* headerPtr = reinterpret_cast<SharedMemoryHeader*>(this->sharedMemory);
+	if (!packet || packetSize <= 0) return;
 
-		uint32_t readOffset = headerPtr->clientDriverReadOffset;
-		uint32_t writeOffset = this->clientDriverLaneWriteOffset;
+	SharedMemoryHeader* headerPtr = reinterpret_cast<SharedMemoryHeader*>(this->sharedMemory);
 
-		uint32_t freeSpace;
-		if (writeOffset >= readOffset) {
-			freeSpace = (LANE_SIZE - writeOffset) + readOffset;
-		}
-		else {
-			freeSpace = readOffset - writeOffset;
-		}
+	uint32_t readOffset = headerPtr->clientDriverReadOffset.load(std::memory_order_acquire);
+	uint32_t writeOffset = this->clientDriverLaneWriteOffset;
 
-		if (packetSize > freeSpace) {
-			std::cout << "Client would lap reader - dropping packet of size" << packetSize << " (free space :" << freeSpace << ")\n";
-			return;
-		}
+	uint32_t freeSpace = writeOffset >= readOffset
+		? (LANE_SIZE - writeOffset) + readOffset
+		: readOffset - writeOffset;
 
-		uint8_t* laneStart = static_cast<uint8_t*>(this->sharedMemory) + this->clientDriverLaneStart;
-		uint32_t currentOffset = this->clientDriverLaneWriteOffset;
+	if (packetSize > freeSpace) return;
 
-		// Handle wrap around
-		if (currentOffset + packetSize > LANE_SIZE) {
-			uint32_t firstPartitionSize = LANE_SIZE - currentOffset;
-			memcpy(laneStart + currentOffset, packet, firstPartitionSize);
+	uint8_t* laneStart = static_cast<uint8_t*>(this->sharedMemory) + this->clientDriverLaneStart;
 
-			uint32_t secondPartitionSize = packetSize - firstPartitionSize;
-			memcpy(laneStart, reinterpret_cast<uint8_t*>(packet) + firstPartitionSize, secondPartitionSize);
-
-			this->clientDriverLaneWriteOffset = secondPartitionSize;
-		}
-		else {
-			memcpy(laneStart + currentOffset, packet, packetSize);
-			this->clientDriverLaneWriteOffset = (currentOffset + packetSize) % LANE_SIZE;
-		}
+	uint8_t* currentWriteStart;
+	uint32_t newWriteOffset;
+	if (this->clientDriverLaneWriteOffset >= LANE_SIZE - LANE_PADDING_SIZE) {
+		currentWriteStart = laneStart;
+		newWriteOffset = packetSize;
+	} else {
+		currentWriteStart = laneStart + this->clientDriverLaneWriteOffset;
+		newWriteOffset = this->clientDriverLaneWriteOffset + packetSize;
 	}
+
+	memcpy(currentWriteStart, packet, packetSize);
+
+	ClientCommandHeader* header = reinterpret_cast<ClientCommandHeader*>(currentWriteStart);
+	header->committed.store(true, std::memory_order_release);
+
+	this->clientDriverLaneWriteOffset = newWriteOffset;
+	headerPtr->clientDriverWriteOffset.store(this->clientDriverLaneWriteOffset, std::memory_order_release);
+
+	this->clientDriverLaneWriteCount++;
+	headerPtr->clientDriverWriteCount.store(this->clientDriverLaneWriteCount, std::memory_order_release);
 }
 
 std::pair<ObjectEntryData, std::pair<ObjectType, std::unique_ptr<uint8_t[]>>> SharedDeviceMemoryClient::readPacketFromDriverClientLane() {
@@ -369,7 +380,7 @@ std::pair<ObjectEntryData, std::pair<ObjectType, std::unique_ptr<uint8_t[]>>> Sh
 		if (!recovered) {
 			this->driverClientLaneReadOffset = headerPtr->driverClientWriteOffset.load(std::memory_order_acquire);
 			this->driverClientLaneReadCount = headerPtr->driverClientWriteCount.load(std::memory_order_acquire);
-			return { ObjectEntryData{}, {Object_DevicePose, nullptr} };
+			return { ObjectEntryData{}, { Object_DevicePose, nullptr } };
 		}
 	}
 
@@ -419,7 +430,7 @@ bool SharedDeviceMemoryClient::isValidObjectPacket(const ObjectEntry* entry, con
 		return false;
 	}
 
-	if (!(0 <= entry->deviceIndex && entry->deviceIndex < 128)) {
+	if (!(0 <= entry->deviceIndex && entry->deviceIndex < 64)) {
 		return false;
 	}
 
@@ -444,7 +455,6 @@ bool SharedDeviceMemoryClient::isValidObjectPacket(const ObjectEntry* entry, con
 	//const int MAX_VERSION_DELTA = 1000;
 	//const int difference = entry->version - header->driverClientWriteCount;
 	//if (abs(difference) > MAX_VERSION_DELTA) {
-	//	std::cout << "Version delta\n";
 	//	return false;
 	//}
 

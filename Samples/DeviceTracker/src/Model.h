@@ -1,34 +1,36 @@
 #pragma once
 #include "DeviceTypes.h"
+#include "DeviceStateCommandSender.h"
+#include "IDeviceStateEventReciever.h"
 #include <unordered_map>
 #include <string>
 #include <iostream>
 
-class Model {
+class Model : public IDeviceStateEventReciever {
 public:
-	static Model& getInstance();
+	Model(DeviceStateCommandSender& commandSender);
 
-	void updateDevicePose(uint32_t deviceIndex, DevicePose newPose);
-	void removeDevicePose(uint32_t deviceIndex);
+	void DeviceInputBooleanAdded(uint32_t deviceIndex, const std::string& path) override;
+	void DeviceInputBooleanRemoved(uint32_t deviceIndex, const std::string& path) override;
+	void DeviceInputScalarAdded(uint32_t deviceIndex, const std::string& path) override;
+	void DeviceInputScalarRemoved(uint32_t deviceIndex, const std::string& path) override;
+	void DeviceInputSkeletonAdded(uint32_t deviceIndex, const std::string& path) override;
+	void DeviceInputSkeletonRemoved(uint32_t deviceIndex, const std::string& path) override;
+	void DeviceInputPoseAdded(uint32_t deviceIndex, const std::string& path) override;
+	void DeviceInputPoseRemoved(uint32_t deviceIndex, const std::string& path) override;
+	void DeviceInputEyeTrackingAdded(uint32_t deviceIndex, const std::string& path) override;
+	void DeviceInputEyeTrackingRemoved(uint32_t deviceIndex, const std::string& path) override;
 
-	void updateBooleanInput(uint32_t deviceIndex, const std::string& path, BooleanInput newInput);
-	void removeBooleanInput(uint32_t deviceIndex, const std::string& path);
-
-	void updateScalarInput(uint32_t deviceIndex, const std::string& path, ScalarInput newInput);
-	void removeScalarInput(uint32_t deviceIndex, const std::string& path);
-
-	void updateSkeletonInput(uint32_t deviceIndex, const std::string& path, SkeletonInput newInput);
-	void removeSkeletonInput(uint32_t deviceIndex, const std::string& path);
-
-	void updatePoseInput(uint32_t deviceIndex, const std::string& path, PoseInput newInput);
-	void removePoseInput(uint32_t deviceIndex, const std::string& path);
-
-	void updateEyeTrackingInput(uint32_t deviceIndex, const std::string& path, EyeTrackingInput newInput);
-	void removeEyeTrackingInput(uint32_t deviceIndex, const std::string& path);
+	void DevicePoseChanged(uint32_t deviceIndex, DevicePose oldPose, DevicePose newPose) override;
+	void DeviceInputBooleanChanged(uint32_t deviceIndex, std::string path, BooleanInput oldInput, BooleanInput newInput) override;
+	void DeviceInputScalarChanged(uint32_t deviceIndex, std::string path, ScalarInput oldInput, ScalarInput newInput) override;
+	void DeviceInputSkeletonChanged(uint32_t deviceIndex, std::string path, SkeletonInput oldInput, SkeletonInput newInput) override;
+	void DeviceInputPoseChanged(uint32_t deviceIndex, std::string path, PoseInput oldInput, PoseInput newInput) override;
+	void DeviceInputEyeTrackingChanged(uint32_t deviceIndex, std::string path, EyeTrackingInput oldInput, EyeTrackingInput newInput) override;
 
 	void print();
 private:
-	Model();
+	DeviceStateCommandSender commandSender;
 
 	std::unordered_map<uint32_t, DevicePose> devicePoses;
 	std::unordered_map<uint32_t, std::unordered_map<std::string, BooleanInput>> booleanInputs;

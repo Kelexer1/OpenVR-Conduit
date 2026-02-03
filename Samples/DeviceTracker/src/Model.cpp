@@ -1,57 +1,101 @@
 #include "Model.h"
 #include "openvr.h"
 
-Model& Model::getInstance() {
-	static Model instance;
-	return instance;
+Model::Model(DeviceStateCommandSender& commandSender) : commandSender(commandSender) {}
+
+void Model::DeviceInputBooleanAdded(uint32_t deviceIndex, const std::string& path) {
+	this->booleanInputs[deviceIndex][path];
+	commandSender.setUseOverridenBooleanInputState(deviceIndex, path, true);
 }
 
-void Model::updateDevicePose(uint32_t deviceIndex, DevicePose newPose) {
+void Model::DeviceInputBooleanRemoved(uint32_t deviceIndex, const std::string& path) {
+	auto it = this->booleanInputs.find(deviceIndex);
+	if (it != this->booleanInputs.end()) {
+		it->second.erase(path);
+		if (it->second.empty()) {
+			this->booleanInputs.erase(it);
+		}
+	}
+}
+
+void Model::DeviceInputScalarAdded(uint32_t deviceIndex, const std::string& path) {
+	this->scalarInputs[deviceIndex][path];
+}
+
+void Model::DeviceInputScalarRemoved(uint32_t deviceIndex, const std::string& path) {
+	auto it = this->scalarInputs.find(deviceIndex);
+	if (it != this->scalarInputs.end()) {
+		it->second.erase(path);
+		if (it->second.empty()) {
+			this->scalarInputs.erase(it);
+		}
+	}
+}
+
+void Model::DeviceInputSkeletonAdded(uint32_t deviceIndex, const std::string& path) {
+	this->scalarInputs[deviceIndex][path];
+}
+
+void Model::DeviceInputSkeletonRemoved(uint32_t deviceIndex, const std::string& path) {
+	auto it = this->skeletonInputs.find(deviceIndex);
+	if (it != this->skeletonInputs.end()) {
+		it->second.erase(path);
+		if (it->second.empty()) {
+			this->skeletonInputs.erase(it);
+		}
+	}
+}
+
+void Model::DeviceInputPoseAdded(uint32_t deviceIndex, const std::string& path) {
+	this->poseInputs[deviceIndex][path];
+}
+
+void Model::DeviceInputPoseRemoved(uint32_t deviceIndex, const std::string& path) {
+	auto it = this->poseInputs.find(deviceIndex);
+	if (it != this->poseInputs.end()) {
+		it->second.erase(path);
+		if (it->second.empty()) {
+			this->poseInputs.erase(it);
+		}
+	}
+}
+
+void Model::DeviceInputEyeTrackingAdded(uint32_t deviceIndex, const std::string& path) {
+	this->eyeTrackingInputs[deviceIndex][path];
+}
+
+void Model::DeviceInputEyeTrackingRemoved(uint32_t deviceIndex, const std::string& path) {
+	auto it = this->eyeTrackingInputs.find(deviceIndex);
+	if (it != this->eyeTrackingInputs.end()) {
+		it->second.erase(path);
+		if (it->second.empty()) {
+			this->eyeTrackingInputs.erase(it);
+		}
+	}
+}
+
+void Model::DevicePoseChanged(uint32_t deviceIndex, DevicePose oldPose, DevicePose newPose) {
 	this->devicePoses[deviceIndex] = newPose;
 }
 
-void Model::removeDevicePose(uint32_t deviceIndex) {
-	this->devicePoses.erase(deviceIndex);
-}
-
-void Model::updateBooleanInput(uint32_t deviceIndex, const std::string& path, BooleanInput newInput) {
+void Model::DeviceInputBooleanChanged(uint32_t deviceIndex, std::string path, BooleanInput oldInput, BooleanInput newInput) {
 	this->booleanInputs[deviceIndex][path] = newInput;
 }
 
-void Model::removeBooleanInput(uint32_t deviceIndex, const std::string& path) {
-	this->booleanInputs[deviceIndex].erase(path);
-}
-
-void Model::updateScalarInput(uint32_t deviceIndex, const std::string& path, ScalarInput newInput) {
+void Model::DeviceInputScalarChanged(uint32_t deviceIndex, std::string path, ScalarInput oldInput, ScalarInput newInput) {
 	this->scalarInputs[deviceIndex][path] = newInput;
 }
 
-void Model::removeScalarInput(uint32_t deviceIndex, const std::string& path) {
-	this->scalarInputs[deviceIndex].erase(path);
-}
-
-void Model::updateSkeletonInput(uint32_t deviceIndex, const std::string& path, SkeletonInput newInput) {
+void Model::DeviceInputSkeletonChanged(uint32_t deviceIndex, std::string path, SkeletonInput oldInput, SkeletonInput newInput) {
 	this->skeletonInputs[deviceIndex][path] = newInput;
 }
 
-void Model::removeSkeletonInput(uint32_t deviceIndex, const std::string& path) {
-	this->skeletonInputs[deviceIndex].erase(path);
-}
-
-void Model::updatePoseInput(uint32_t deviceIndex, const std::string& path, PoseInput newInput) {
+void Model::DeviceInputPoseChanged(uint32_t deviceIndex, std::string path, PoseInput oldInput, PoseInput newInput) {
 	this->poseInputs[deviceIndex][path] = newInput;
 }
 
-void Model::removePoseInput(uint32_t deviceIndex, const std::string& path) {
-	this->poseInputs[deviceIndex].erase(path);
-}
-
-void Model::updateEyeTrackingInput(uint32_t deviceIndex, const std::string& path, EyeTrackingInput newInput) {
+void Model::DeviceInputEyeTrackingChanged(uint32_t deviceIndex, std::string path, EyeTrackingInput oldInput, EyeTrackingInput newInput) {
 	this->eyeTrackingInputs[deviceIndex][path] = newInput;
-}
-
-void Model::removeEyeTrackingInput(uint32_t deviceIndex, const std::string& path) {
-	this->eyeTrackingInputs[deviceIndex].erase(path);
 }
 
 void Model::print() {
@@ -126,5 +170,3 @@ void Model::print() {
 		std::cout << "\n";
 	}
 }
-
-Model::Model() {}

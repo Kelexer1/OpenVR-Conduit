@@ -72,6 +72,26 @@ bool SharedDeviceMemoryDriver::initializeSharedMemoryData() {
 	return true;
 }
 
+std::string SharedDeviceMemoryDriver::getPathFromPathOffset(uint32_t offset) {
+	uint8_t* pathTableStart = static_cast<uint8_t*>(this->sharedMemory) + this->pathTableStart;
+
+	SharedMemoryHeader* headerPtr = reinterpret_cast<SharedMemoryHeader*>(this->sharedMemory);
+	while (headerPtr->pathTableWritingOffset.load(std::memory_order_acquire) == offset) {} // Wait for offset to finish writing if required
+
+	const char* path = reinterpret_cast<const char*>(pathTableStart + offset);
+
+	uint32_t len;
+	for (len = 0; len < MAX_PATH_LENGTH; len++) {
+		if (path[len] == '\0') break;
+	}
+
+	if (len == MAX_PATH_LENGTH) {
+		return std::string();
+	}
+
+	return std::string(path);
+}
+
 uint32_t SharedDeviceMemoryDriver::getOffsetOfPath(const std::string& path) {
 	SharedMemoryHeader* headerPtr = reinterpret_cast<SharedMemoryHeader*>(this->sharedMemory);
 
@@ -82,7 +102,7 @@ uint32_t SharedDeviceMemoryDriver::getOffsetOfPath(const std::string& path) {
 	}
 
 	uint32_t offset = this->currentPathTableWriteOffset;
-	uint32_t writeSize = path.length() + 1;
+	uint32_t writeSize = (uint32_t) path.length() + 1;
 
 	if (offset + writeSize > PATH_TABLE_SIZE) {
 		LogManager::log(LOG_ERROR, "Path table overflow when adding path {}", path);
@@ -103,176 +123,146 @@ uint32_t SharedDeviceMemoryDriver::getOffsetOfPath(const std::string& path) {
 }
 
 void SharedDeviceMemoryDriver::pollForClientUpdates() {
-	//SharedMemoryHeader* headerPtr = static_cast<SharedMemoryHeader*>(this->sharedMemory);
+	SharedMemoryHeader* headerPtr = static_cast<SharedMemoryHeader*>(this->sharedMemory);
+	DeviceStateModel& model = DeviceStateModel::getInstance();
 
-	//if (this->clientDriverReadCount < headerPtr->clientDriverWriteCount) {
-	//	ClientCommandHeader* commandHeader;
-	//	do {
-	//		// Read command header
-	//		auto headerBuf = this->readPacketFromClientDriverLane(sizeof(ClientCommandHeader));
-	//		commandHeader = reinterpret_cast<ClientCommandHeader*>(headerBuf.get());
+	uint64_t currentWriteCount = headerPtr->clientDriverWriteCount.load(std::memory_order_acquire);
+	if (this->clientDriverLaneReadCount < currentWriteCount) {
+		std::atomic_thread_fence(std::memory_order_acquire);
 
-	//		if (!this->isValidCommandHeader(commandHeader, headerPtr)) {
-	//			LogManager::log(LOG_ERROR, "Alignment error detected in client driver lane at offset {}", this->clientDriverLaneReadOffset);
+		ClientCommandHeaderData commandHeader;
 
-	//			bool recovered = false;
-	//			uint32_t searchOffset = this->clientDriverLaneReadOffset;
+		do {
+			auto packet = this->readPacketFromClientDriverLane();
+			commandHeader = packet.first;
 
-	//			const uint32_t FORWARD_SEARCH_BYTES = 4096;
+			if (!commandHeader.successful) break;
 
-	//			// Strategy 1: Forward Check
-	//			for (uint32_t i = 0; i < FORWARD_SEARCH_BYTES; i++) {
-	//				searchOffset = (searchOffset + 1) % LANE_SIZE;
+			std::unique_ptr<uint8_t[]>& paramsBuf = packet.second.second;
 
-	//				uint32_t tempOffset = this->clientDriverLaneReadOffset;
-	//				this->clientDriverLaneReadOffset = searchOffset;
-	//				auto testBuf = this->readPacketFromClientDriverLane(sizeof(ClientCommandHeader));
-	//				ClientCommandHeader* testHeader = reinterpret_cast<ClientCommandHeader*>(testBuf.get());
+			uint32_t deviceIndex = commandHeader.deviceIndex;
+			std::string path;
 
-	//				if (this->isValidCommandHeader(testHeader, headerPtr)) {
-	//					LogManager::log(LOG_INFO, "Recovered alignment at offset {} (skipped {} bytes)", searchOffset, i);
-	//					recovered = true;
-	//					break;
-	//				}
+			switch (commandHeader.type) {
+				case Command_SetUseOverridenStateDevicePose: {
+						CommandParams_SetUseOverridenStateDevicePose * params = reinterpret_cast<CommandParams_SetUseOverridenStateDevicePose*>(paramsBuf.get());
 
-	//				this->clientDriverLaneReadOffset = tempOffset;
-	//			}
-	//			
-	//			// Strategy 2: Jump To Write Offset
-	//			if (!recovered) {
-	//				LogManager::log(LOG_ERROR, "Could not recover alignment after searching +{} bytes, discarded queued commands", FORWARD_SEARCH_BYTES);
-	//				this->clientDriverLaneReadOffset = headerPtr->clientDriverWriteOffset;
-	//				this->clientDriverReadCount = headerPtr->clientDriverWriteCount;
-	//			}
+						ModelDevicePoseSerialized* pose = model.getDevicePose(deviceIndex);
+						if (pose) {
+							pose->useOverridenState = params->useOverridenState;
+						}
 
-	//			headerBuf = this->readPacketFromClientDriverLane(sizeof(ClientCommandHeader));
-	//			commandHeader = reinterpret_cast<ClientCommandHeader*>(headerBuf.get());
-	//		}
+						break;
+				}
+				case Command_SetOverridenStateDevicePose: {
+					CommandParams_SetOverridenStateDevicePose* params = reinterpret_cast<CommandParams_SetOverridenStateDevicePose*>(paramsBuf.get());
 
-	//		uint32_t deviceIndex = commandHeader->deviceIndex;
+					ModelDevicePoseSerialized* pose = model.getDevicePose(deviceIndex);
+					if (pose) {
+						pose->data.overwrittenPose = params->overridenPose;
+						model.setDevicePoseChanged(deviceIndex);
+					}
 
-	//		DeviceStateModel& model = DeviceStateModel::getInstance();
+					break;
+				}
+				case Command_SetUseOverridenStateDeviceInput: {
+					CommandParams_SetUseOverridenStateDeviceInput* params = reinterpret_cast<CommandParams_SetUseOverridenStateDeviceInput*>(paramsBuf.get());
+					std::string inputPath = this->getPathFromPathOffset(params->inputPathOffset);
 
-	//		switch (commandHeader->type) {
-	//			case Command_SetUseOverridenStateDevicePose: {
-	//				auto paramsBuf = this->readPacketFromClientDriverLane(sizeof(CommandParams_SetUseOverridenStateDevicePose));
-	//				CommandParams_SetUseOverridenStateDevicePose* params = reinterpret_cast<CommandParams_SetUseOverridenStateDevicePose*>(paramsBuf.get());
+					ModelDeviceInputBooleanSerialized* inputBoolean = model.getBooleanInput(deviceIndex, inputPath);
+					if (inputBoolean) {
+						inputBoolean->useOverridenState = params->useOverridenState;
+						model.setInputBooleanChanged(deviceIndex, inputPath);
+					}
 
-	//				ModelDevicePoseSerialized* pose = model.getDevicePose(deviceIndex);
-	//				if (pose) {
-	//					pose->useOverridenState = params->useOverridenState;
-	//				}
+					ModelDeviceInputScalarSerialized* inputScalar = model.getScalarInput(deviceIndex, inputPath);
+					if (inputScalar) {
+						inputScalar->useOverridenState = params->useOverridenState;
+						model.setInputScalarChanged(deviceIndex, inputPath);
+					}
 
-	//				break;
-	//			}
-	//			case Command_SetOverridenStateDevicePose: {
-	//				auto paramsBuf = this->readPacketFromClientDriverLane(sizeof(CommandParams_SetOverridenStateDevicePose));
-	//				CommandParams_SetOverridenStateDevicePose* params = reinterpret_cast<CommandParams_SetOverridenStateDevicePose*>(paramsBuf.get());
+					ModelDeviceInputSkeletonSerialized* inputSkeleton = model.getSkeletonInput(deviceIndex, inputPath);
+					if (inputSkeleton) {
+						inputSkeleton->useOverridenState = params->useOverridenState;
+						model.setInputSkeletonChanged(deviceIndex, inputPath);
+					}
 
-	//				ModelDevicePoseSerialized* pose = model.getDevicePose(deviceIndex);
-	//				if (pose) {
-	//					pose->data.overwrittenPose = params->overridenPose;
-	//					model.setDevicePoseChanged(deviceIndex);
-	//				}
+					ModelDeviceInputPoseSerialized* inputPose = model.getPoseInput(deviceIndex, inputPath);
+					if (inputPose) {
+						inputPose->useOverridenState = params->useOverridenState;
+						model.setInputPoseChanged(deviceIndex, inputPath);
+					}
 
-	//				break;
-	//			}
-	//			case Command_SetUseOverridenStateDeviceInput: {
-	//				auto paramsBuf = this->readPacketFromClientDriverLane(sizeof(CommandParams_SetUseOverridenStateDeviceInput));
-	//				CommandParams_SetUseOverridenStateDeviceInput* params = reinterpret_cast<CommandParams_SetUseOverridenStateDeviceInput*>(paramsBuf.get());
+					ModelDeviceInputEyeTrackingSerialized* inputEyeTracking = model.getEyeTrackingInput(deviceIndex, inputPath);
+					if (inputEyeTracking) {
+						inputEyeTracking->useOverridenState = params->useOverridenState;
+						model.setInputEyeTrackingChanged(deviceIndex, inputPath);
+					}
 
-	//				ModelDeviceInputBooleanSerialized* inputBoolean = model.getBooleanInput(deviceIndex, params->inputPath);
-	//				if (inputBoolean) {
-	//					inputBoolean->useOverridenState = params->useOverridenState;
-	//					model.setInputBooleanChanged(deviceIndex, params->inputPath);
-	//				}
+					break;
+				}
+				case Command_SetOverridenStateDeviceInputBoolean: {
+					CommandParams_SetOverridenStateDeviceInputBoolean* params = reinterpret_cast<CommandParams_SetOverridenStateDeviceInputBoolean*>(paramsBuf.get());
+					std::string inputPath = this->getPathFromPathOffset(params->inputPathOffset);
 
-	//				ModelDeviceInputScalarSerialized* inputScalar = model.getScalarInput(deviceIndex, params->inputPath);
-	//				if (inputScalar) {
-	//					inputScalar->useOverridenState = params->useOverridenState;
-	//					model.setInputScalarChanged(deviceIndex, params->inputPath);
-	//				}
+					ModelDeviceInputBooleanSerialized* input = model.getBooleanInput(deviceIndex, inputPath);
+					if (input) {
+						input->data.overwrittenValue = params->overridenValue;
+					}
 
-	//				ModelDeviceInputSkeletonSerialized* inputSkeleton = model.getSkeletonInput(deviceIndex, params->inputPath);
-	//				if (inputSkeleton) {
-	//					inputSkeleton->useOverridenState = params->useOverridenState;
-	//					model.setInputSkeletonChanged(deviceIndex, params->inputPath);
-	//				}
+					break;
+				}
+				case Command_SetOverridenStateDeviceInputScalar: {
+					CommandParams_SetOverridenStateDeviceInputScalar* params = reinterpret_cast<CommandParams_SetOverridenStateDeviceInputScalar*>(paramsBuf.get());
+					std::string inputPath = this->getPathFromPathOffset(params->inputPathOffset);
 
-	//				ModelDeviceInputPoseSerialized* inputPose = model.getPoseInput(deviceIndex, params->inputPath);
-	//				if (inputPose) {
-	//					inputPose->useOverridenState = params->useOverridenState;
-	//					model.setInputPoseChanged(deviceIndex, params->inputPath);
-	//				}
+					ModelDeviceInputScalarSerialized* input = model.getScalarInput(deviceIndex, inputPath);
+					if (input) {
+						input->data.overwrittenValue = params->overridenValue;
+					}
 
-	//				ModelDeviceInputEyeTrackingSerialized* inputEyeTracking = model.getEyeTrackingInput(deviceIndex, params->inputPath);
-	//				if (inputEyeTracking) {
-	//					inputEyeTracking->useOverridenState = params->useOverridenState;
-	//					model.setInputEyeTrackingChanged(deviceIndex, params->inputPath);
-	//				}
-	//					
-	//				break;
-	//			}
-	//			case Command_SetOverridenStateDeviceInputBoolean: {
-	//				auto paramsBuf = this->readPacketFromClientDriverLane(sizeof(CommandParams_SetOverridenStateDeviceInputBoolean));
-	//				CommandParams_SetOverridenStateDeviceInputBoolean* params = reinterpret_cast<CommandParams_SetOverridenStateDeviceInputBoolean*>(paramsBuf.get());
+					break;
+				}
+				case Command_SetOverridenStateDeviceInputSkeleton: {
+					CommandParams_SetOverridenStateDeviceInputSkeleton* params = reinterpret_cast<CommandParams_SetOverridenStateDeviceInputSkeleton*>(paramsBuf.get());
+					std::string inputPath = this->getPathFromPathOffset(params->inputPathOffset);
 
-	//				ModelDeviceInputBooleanSerialized* input = model.getBooleanInput(deviceIndex, params->inputPath);
-	//				if (input) {
-	//					input->data.overwrittenValue = params->overridenValue;
-	//				}
+					ModelDeviceInputSkeletonSerialized* input = model.getSkeletonInput(deviceIndex, inputPath);
+					if (input) {
+						input->data.overwrittenValue = params->overridenValue;
+					}
 
-	//				break;
-	//			}
-	//			case Command_SetOverridenStateDeviceInputScalar: {
-	//				auto paramsBuf = this->readPacketFromClientDriverLane(sizeof(CommandParams_SetOverridenStateDeviceInputScalar));
-	//				CommandParams_SetOverridenStateDeviceInputScalar* params = reinterpret_cast<CommandParams_SetOverridenStateDeviceInputScalar*>(paramsBuf.get());
+					break;
+				}
+				case Command_SetOverridenStateDeviceInputPose: {
+					CommandParams_SetOverridenStateDeviceInputPose* params = reinterpret_cast<CommandParams_SetOverridenStateDeviceInputPose*>(paramsBuf.get());
+					std::string inputPath = this->getPathFromPathOffset(params->inputPathOffset);
 
-	//				ModelDeviceInputScalarSerialized* input = model.getScalarInput(deviceIndex, params->inputPath);
-	//				if (input) {
-	//					input->data.overwrittenValue = params->overridenValue;
-	//				}
+					ModelDeviceInputPoseSerialized* input = model.getPoseInput(deviceIndex, inputPath);
+					if (input) {
+						input->data.overwrittenValue = params->overridenValue;
+					}
 
-	//				break;
-	//			}
-	//			case Command_SetOverridenStateDeviceInputSkeleton: {
-	//				auto paramsBuf = this->readPacketFromClientDriverLane(sizeof(CommandParams_SetOverridenStateDeviceInputSkeleton));
-	//				CommandParams_SetOverridenStateDeviceInputSkeleton* params = reinterpret_cast<CommandParams_SetOverridenStateDeviceInputSkeleton*>(paramsBuf.get());
+					break;
+				}
+				case Command_SetOverridenStateDeviceInputEyeTracking: {
+					CommandParams_SetOverridenStateDeviceInputEyeTracking* params = reinterpret_cast<CommandParams_SetOverridenStateDeviceInputEyeTracking*>(paramsBuf.get());
+					std::string inputPath = this->getPathFromPathOffset(params->inputPathOffset);
 
-	//				ModelDeviceInputSkeletonSerialized* input = model.getSkeletonInput(deviceIndex, params->inputPath);
-	//				if (input) {
-	//					input->data.overwrittenValue = params->overridenValue;
-	//				}
+					ModelDeviceInputEyeTrackingSerialized* input = model.getEyeTrackingInput(deviceIndex, inputPath);
+					if (input) {
+						input->data.overwrittenValue = params->overridenValue;
+					}
 
-	//				break;
-	//			}
-	//			case Command_SetOverridenStateDeviceInputPose: {
-	//				auto paramsBuf = this->readPacketFromClientDriverLane(sizeof(CommandParams_SetOverridenStateDeviceInputPose));
-	//				CommandParams_SetOverridenStateDeviceInputPose* params = reinterpret_cast<CommandParams_SetOverridenStateDeviceInputPose*>(paramsBuf.get());
+					break;
+				}
+			}
 
-	//				ModelDeviceInputPoseSerialized* input = model.getPoseInput(deviceIndex, params->inputPath);
-	//				if (input) {
-	//					input->data.overwrittenValue = params->overridenValue;
-	//				}
+			this->clientDriverLaneReadCount = commandHeader.version;
+		} while (commandHeader.version < this->clientDriverLaneReadCount);
 
-	//				break;
-	//			}
-	//			case Command_SetOverridenStateDeviceInputEyeTracking: {
-	//				auto paramsBuf = this->readPacketFromClientDriverLane(sizeof(CommandParams_SetOverridenStateDeviceInputEyeTracking));
-	//				CommandParams_SetOverridenStateDeviceInputEyeTracking* params = reinterpret_cast<CommandParams_SetOverridenStateDeviceInputEyeTracking*>(paramsBuf.get());
-
-	//				ModelDeviceInputEyeTrackingSerialized* input = model.getEyeTrackingInput(deviceIndex, params->inputPath);
-	//				if (input) {
-	//					input->data.overwrittenValue = params->overridenValue;
-	//				}
-
-	//				break;
-	//			}
-	//		}
-	//	} while (commandHeader->version < this->clientDriverReadCount);
-
-	//	this->clientDriverReadCount = headerPtr->clientDriverWriteCount;
-	//}
+		this->clientDriverLaneReadCount = headerPtr->clientDriverWriteCount;
+	} 
 }
 
 void SharedDeviceMemoryDriver::writePacketToDriverClientLane(void* packet, uint32_t packetSize) {
@@ -315,37 +305,88 @@ void SharedDeviceMemoryDriver::writePacketToDriverClientLane(void* packet, uint3
 	headerPtr->driverClientWriteCount.store(this->driverClientLaneWriteCount, std::memory_order_release);
 }
  
-std::unique_ptr<uint8_t[]> SharedDeviceMemoryDriver::readPacketFromClientDriverLane(uint32_t packetSize) {
-	if (packetSize == 0) {
-		return nullptr;
-	}
+std::pair<ClientCommandHeaderData, std::pair<ClientCommandType, std::unique_ptr<uint8_t[]>>> SharedDeviceMemoryDriver::readPacketFromClientDriverLane() {
+	SharedMemoryHeader* headerPtr = reinterpret_cast<SharedMemoryHeader*>(this->sharedMemory);
 
-	auto buffer = std::make_unique<uint8_t[]>(packetSize);
-	if (!buffer) {
-		return nullptr;
-	}
+	if (this->clientDriverLaneReadOffset >= LANE_SIZE - LANE_PADDING_SIZE) this->clientDriverLaneReadOffset = 0;
 
+	uint32_t writeOffset = headerPtr->clientDriverWriteOffset.load(std::memory_order_acquire);
+	if (this->clientDriverLaneReadOffset == writeOffset) return { ClientCommandHeaderData{}, { Command_SetOverridenStateDevicePose, nullptr } };
+
+	// Read ClientCommandHeader
 	uint8_t* laneStart = static_cast<uint8_t*>(this->sharedMemory) + this->clientDriverLaneStart;
-	uint32_t currentOffset = this->clientDriverLaneReadOffset;
+	uint8_t* readStart = laneStart + this->clientDriverLaneReadOffset;
+	ClientCommandHeader* rawHeader = reinterpret_cast<ClientCommandHeader*>(readStart);
 
-	// Handle wrap around
-	if (currentOffset + packetSize > LANE_SIZE) {
-		uint32_t firstPartitionSize = LANE_SIZE - currentOffset;
-		memcpy(buffer.get(), laneStart + currentOffset, firstPartitionSize);
+	// Misalignment correction
+	if (!this->isValidCommandHeader(rawHeader, headerPtr)) {
+		bool recovered = false;
+		uint32_t searchOffset = this->clientDriverLaneReadOffset;
 
-		uint32_t secondPartitionSize = packetSize - firstPartitionSize;
-		memcpy(buffer.get() + firstPartitionSize, laneStart, secondPartitionSize);
+		const uint32_t FORWARD_SEARCH_BYTES = 4096;
 
-		this->clientDriverLaneReadOffset = secondPartitionSize;
-	} else {
-		memcpy(buffer.get(), laneStart + currentOffset, packetSize);
-		this->clientDriverLaneReadOffset = (currentOffset + packetSize) % LANE_SIZE;
+		// Strategy 1: Forward Check
+		for (uint32_t i = 0; i < FORWARD_SEARCH_BYTES; i++) {
+			searchOffset = (searchOffset + 1) % LANE_SIZE;
+
+			if (searchOffset == writeOffset) break;
+
+			ClientCommandHeader* testHeader = reinterpret_cast<ClientCommandHeader*>(laneStart + searchOffset);
+
+			if (this->isValidCommandHeader(testHeader, headerPtr)) {
+				recovered = true;
+				this->clientDriverLaneReadOffset = searchOffset;
+				readStart = laneStart + searchOffset;
+				rawHeader = testHeader;
+				break;
+			}
+		}
+
+		// Strategy 2: Jump To Write Offset
+		if (!recovered) {
+			this->clientDriverLaneReadOffset = headerPtr->clientDriverWriteOffset.load(std::memory_order_acquire);
+			this->clientDriverLaneReadCount = headerPtr->clientDriverWriteCount.load(std::memory_order_acquire);
+			return { ClientCommandHeaderData{}, { Command_SetUseOverridenStateDevicePose , nullptr} };
+		}
 	}
 
-	SharedMemoryHeader* headerPtr = static_cast<SharedMemoryHeader*>(this->sharedMemory);
-	headerPtr->clientDriverReadOffset = this->clientDriverLaneReadOffset;
+	while (!rawHeader->committed.load(std::memory_order_acquire)) {} // Wait for packet to be valid
 
-	return buffer;
+	ClientCommandHeaderData header;
+	header.successful = true;
+	header.type = rawHeader->type;
+	header.deviceIndex = rawHeader->deviceIndex;
+	header.version = rawHeader->version;
+
+	// Read object data
+	uint32_t dataSize = 0;
+	ClientCommandType type = header.type;
+	switch (type) {
+	case Command_SetUseOverridenStateDevicePose:
+		dataSize = sizeof(CommandParams_SetUseOverridenStateDevicePose); break;
+	case Command_SetOverridenStateDevicePose:
+		dataSize = sizeof(CommandParams_SetOverridenStateDevicePose); break;
+	case Command_SetUseOverridenStateDeviceInput:
+		dataSize = sizeof(CommandParams_SetUseOverridenStateDeviceInput); break;
+	case Command_SetOverridenStateDeviceInputBoolean:
+		dataSize = sizeof(CommandParams_SetOverridenStateDeviceInputBoolean); break;
+	case Command_SetOverridenStateDeviceInputScalar:
+		dataSize = sizeof(CommandParams_SetOverridenStateDeviceInputScalar); break;
+	case Command_SetOverridenStateDeviceInputSkeleton:
+		dataSize = sizeof(CommandParams_SetOverridenStateDeviceInputSkeleton); break;
+	case Command_SetOverridenStateDeviceInputPose:
+		dataSize = sizeof(CommandParams_SetOverridenStateDeviceInputPose); break;
+	case Command_SetOverridenStateDeviceInputEyeTracking:
+		dataSize = sizeof(CommandParams_SetOverridenStateDeviceInputEyeTracking); break;
+	}
+
+	auto dataBuffer = std::make_unique<uint8_t[]>(dataSize);
+	memcpy(dataBuffer.get(), readStart + sizeof(ClientCommandHeader), dataSize);
+
+	this->clientDriverLaneReadOffset += sizeof(ClientCommandHeader) + dataSize;
+	headerPtr->clientDriverReadOffset.store(this->clientDriverLaneReadOffset, std::memory_order_release);
+
+	return std::make_pair(header, std::make_pair(type, std::move(dataBuffer)));
 }
 
 void SharedDeviceMemoryDriver::syncDevicePoseUpdateToSharedMemory(DevicePoseSerialized* packet, uint32_t deviceIndex) {
@@ -480,7 +521,7 @@ bool SharedDeviceMemoryDriver::isValidCommandHeader(const ClientCommandHeader* h
 		return false;
 	}
 
-	if (!(0 <= header->deviceIndex && header->deviceIndex < 128)) {
+	if (!(0 <= header->deviceIndex && header->deviceIndex < vr::k_unMaxTrackedDeviceCount)) {
 		return false;
 	}
 

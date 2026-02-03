@@ -1,7 +1,8 @@
 #pragma once
 #include "IDeviceStateEventReciever.h"
+#include <iostream>
 
-class StateEventReciever : public IDeviceStateEventReciever {
+class MyEventReciever : public IDeviceStateEventReciever {
 public:
 	void DeviceInputBooleanAdded(uint32_t deviceIndex, const std::string& path) override;
 	void DeviceInputBooleanRemoved(uint32_t deviceIndex, const std::string& path) override;

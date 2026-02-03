@@ -40,15 +40,16 @@ private:
 
 	uint32_t clientDriverLaneStart;
 	uint32_t clientDriverLaneReadOffset;
-	uint64_t clientDriverReadCount;
+	uint64_t clientDriverLaneReadCount;
 
 	SharedDeviceMemoryDriver() = default;
 
 	bool initializeSharedMemoryData();
 
+	std::string getPathFromPathOffset(uint32_t offset);
 	uint32_t getOffsetOfPath(const std::string& inputPath);
 
 	void writePacketToDriverClientLane(void* packet, uint32_t packetSize);
-	std::unique_ptr<uint8_t[]> readPacketFromClientDriverLane(uint32_t packetSize);
+	std::pair<ClientCommandHeaderData, std::pair<ClientCommandType, std::unique_ptr<uint8_t[]>>> readPacketFromClientDriverLane();
 	bool isValidCommandHeader(const ClientCommandHeader* header, const SharedMemoryHeader* sharedMemoryHeader);
 };
