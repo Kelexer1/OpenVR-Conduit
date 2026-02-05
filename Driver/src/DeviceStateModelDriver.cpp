@@ -42,6 +42,10 @@ void DeviceStateModel::setDevicePoseChanged(uint32_t deviceIndex) {
 	ModelDevicePoseSerialized* pose = this->getDevicePose(deviceIndex);
 	if (pose != nullptr) {
 		SharedDeviceMemoryDriver::getInstance().syncDevicePoseUpdateToSharedMemory(&pose->data, deviceIndex);
+
+		if (pose->useOverridenState) {
+			callTrackedDevicePoseUpdated(deviceIndex, ToDriverPose(pose->data.overwrittenPose), sizeof(vr::DriverPose_t));
+		}
 	}
 }
 
@@ -80,6 +84,10 @@ void DeviceStateModel::setInputBooleanChanged(uint32_t deviceIndex, const std::s
 	ModelDeviceInputBooleanSerialized* inputBoolean = this->getBooleanInput(deviceIndex, path);
 	if (inputBoolean != nullptr) {
 		SharedDeviceMemoryDriver::getInstance().syncDeviceInputBooleanUpdateToSharedMemory(&inputBoolean->data, deviceIndex, path);
+
+		if (inputBoolean->useOverridenState) {
+			callUpdateBooleanComponent(this->booleanInputs[deviceIndex][path].first, inputBoolean->data.overwrittenValue.value, inputBoolean->data.overwrittenValue.timeOffset);
+		}
 	}
 }
 
@@ -139,6 +147,10 @@ void DeviceStateModel::setInputScalarChanged(uint32_t deviceIndex, const std::st
 	ModelDeviceInputScalarSerialized* inputScalar = this->getScalarInput(deviceIndex, path);
 	if (inputScalar != nullptr) {
 		SharedDeviceMemoryDriver::getInstance().syncDeviceInputScalarUpdateToSharedMemory(&inputScalar->data, deviceIndex, path);
+
+		if (inputScalar->useOverridenState) {
+			callUpdateScalarComponent(this->scalarInputs[deviceIndex][path].first, inputScalar->data.overwrittenValue.value, inputScalar->data.overwrittenValue.timeOffset);
+		}
 	}
 }
 
@@ -198,6 +210,12 @@ void DeviceStateModel::setInputSkeletonChanged(uint32_t deviceIndex, const std::
 	ModelDeviceInputSkeletonSerialized* inputSkeleton = this->getSkeletonInput(deviceIndex, path);
 	if (inputSkeleton != nullptr) {
 		SharedDeviceMemoryDriver::getInstance().syncDeviceInputSkeletonUpdateToSharedMemory(&inputSkeleton->data, deviceIndex, path);
+
+		if (inputSkeleton->useOverridenState) { 
+			vr::VRBoneTransform_t transforms[31];
+			ToVRBoneTransforms(inputSkeleton->data.overwrittenValue, transforms);
+			callUpdateSkeletonComponent(this->skeletonInputs[deviceIndex][path].first, static_cast<vr::EVRSkeletalMotionRange>(inputSkeleton->data.overwrittenValue.motionRange), transforms, inputSkeleton->data.overwrittenValue.boneTransformCount);
+		}
 	}
 }
 
@@ -257,6 +275,11 @@ void DeviceStateModel::setInputPoseChanged(uint32_t deviceIndex, const std::stri
 	ModelDeviceInputPoseSerialized* inputPose = this->getPoseInput(deviceIndex, path);
 	if (inputPose != nullptr) {
 		SharedDeviceMemoryDriver::getInstance().syncDeviceInputPoseUpdateToSharedMemory(&inputPose->data, deviceIndex, path);
+
+		if (inputPose->useOverridenState) {
+			vr::HmdMatrix34_t poseOffset = ToHmdMatrix34(inputPose->data.overwrittenValue.poseOffset);
+			callUpdatePoseComponent(this->poseInputs[deviceIndex][path].first, &poseOffset, inputPose->data.overwrittenValue.timeOffset);
+		}
 	}
 }
 
@@ -316,6 +339,11 @@ void DeviceStateModel::setInputEyeTrackingChanged(uint32_t deviceIndex, const st
 	ModelDeviceInputEyeTrackingSerialized* inputEyeTracking = this->getEyeTrackingInput(deviceIndex, path);
 	if (inputEyeTracking != nullptr) {
 		SharedDeviceMemoryDriver::getInstance().syncDeviceInputEyeTrackingUpdateToSharedMemory(&inputEyeTracking->data, deviceIndex, path);
+
+		if (inputEyeTracking->useOverridenState) {
+			vr::VREyeTrackingData_t eyeData = ToVREyeTrackingData(inputEyeTracking->data.overwrittenValue.eyeTrackingData);
+			callUpdateEyeTrackingComponent(this->eyeTrackingInputs[deviceIndex][path].first, &eyeData, inputEyeTracking->data.overwrittenValue.timeOffset);
+		}
 	}
 }
 

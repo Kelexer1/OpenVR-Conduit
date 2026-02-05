@@ -1,25 +1,35 @@
 #pragma once
 #include <stdint.h>
 
-/// These struct declarations are taken directly from the OpenVR SDK, for proper documentation on each structs members, 
-/// consult the OpenVR SDK documentation for the respective type
+/**
+ * @brief Many of these struct declarations are taken directly from the OpenVR SDK. For proper documentation on each
+ * structs members, consult the OpenVR SDK documentation
+ */
 
-/// struct HmdVector3_t
+/**
+ * Based on struct HmdVector3_t from the OpenVR SDK, documentation available there
+ */ 
 struct DeviceVector3 {
 	double v[3] = { 0.0, 0.0, 0.0 };
 };
 
-/// struct HmdVector4_t
+/**
+ * Based on struct HmdVector4_t from the OpenVR SDK, documentation available there
+ */ 
 struct DeviceVector4 {
 	double v[4] = { 0.0, 0.0, 0.0, 0.0 };
 };
 
-/// struct HmdMatrix34_t
+/**
+ * Based on struct HmdMatrix34_t from the OpenVR SDK, documentation available there
+ */
 struct DeviceMatrix34 {
 	double m[3][4];
 };
 
-/// struct HmdQuaternion_t
+/**
+ * Based on struct HmdQuaternion_t from the OpenVR SDK, documentation available there
+ */
 struct DeviceQuaternion {
 	double w = 1.0;
 	double x = 0.0;
@@ -27,7 +37,9 @@ struct DeviceQuaternion {
 	double z = 0.0;
 };
 
-/// enum ETrackingResult
+/**
+ * Based on enum ETrackingResult from the OpenVR SDK, documentation available there
+ */
 enum DeviceTrackingResult {
 	TrackingResult_Uninitialized = 1,
 
@@ -40,7 +52,9 @@ enum DeviceTrackingResult {
 	TrackingResult_Fallback_RotationOnly = 300,
 };
 
-/// struct DriverPose_t
+/**
+ * Based on struct DriverPose_t from the OpenVR SDK, documentation available there
+ */
 struct DevicePose {
 	double poseTimeOffset = 0.0;
 
@@ -70,18 +84,25 @@ struct DevicePose {
 	bool deviceIsConnected = false;
 };
 
-/// enum EVRSkeletalMotionRange
+/**
+ * Based on enum EVRSkeletalMotionRange from the OpenVR SDK, documentation available there
+ */ 
 enum SkeletalMotionRange {
 	VRSkeletalMotionRange_WithController = 0,
 	VRSkeletalMotionRange_WithoutController = 1,
 };
 
-/// struct VRBoneTransform_t
+/**
+ * Based on struct VRBoneTransform_t from the OpenVR SDK, documentation available there
+ */ 
 struct BoneTransform {
 	DeviceVector4 position;
 	DeviceQuaternion orientation;
 };
 
+/**
+ * Based on struct VREyeTrackingData_t from the OpenVR SDK, documentation available there
+ */ 
 struct EyeTrackingData {
 	bool active;
 	bool valid;
@@ -91,27 +112,43 @@ struct EyeTrackingData {
 	DeviceVector3 gazeTarget;
 };
 
+/**
+ * @brief Represents a single boolean input, such as a button
+ */
 struct BooleanInput {
 	bool value;
 	double timeOffset;
 };
 
+/**
+ * @brief Represents a single scalar input, such as the value of a trigger from 0-1, inclusive
+ */
 struct ScalarInput {
 	float value;
 	double timeOffset;
 };
 
+/**
+ * @brief Represents a single skeleton input, such as the representation of a hand
+ * through hand tracking on a supported controller
+ */
 struct SkeletonInput {
 	SkeletalMotionRange motionRange;
 	BoneTransform boneTransforms[31];
 	uint32_t boneTransformCount;
 };
 
+/**
+ * @brief Represents a single pose input, or transformation of device pose
+ */
 struct PoseInput {
 	DeviceMatrix34 poseOffset;
 	double timeOffset;
 };
 
+/**
+ * @brief Represents a single eye tracking input
+ */
 struct EyeTrackingInput {
 	EyeTrackingData eyeTrackingData;
 	double timeOffset;

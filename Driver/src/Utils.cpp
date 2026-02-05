@@ -71,3 +71,60 @@ vr::DriverPose_t ToDriverPose(const DevicePose& cp) {
 
     return pose;
 }
+
+vr::HmdMatrix34_t ToHmdMatrix34(const DeviceMatrix34& mat) {
+    vr::HmdMatrix34_t result = {};
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 4; j++) {
+            result.m[i][j] = static_cast<float>(mat.m[i][j]);
+        }
+    }
+    return result;
+}
+
+DeviceMatrix34 FromHmdMatrix34(const vr::HmdMatrix34_t& mat) {
+    DeviceMatrix34 result = {};
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 4; j++) {
+            result.m[i][j] = static_cast<double>(mat.m[i][j]);
+        }
+    }
+    return result;
+}
+
+void ToVRBoneTransforms(const SkeletonInput& input, vr::VRBoneTransform_t* outTransforms) {
+    for (uint32_t i = 0; i < input.boneTransformCount; i++) {
+        const auto& bt = input.boneTransforms[i];
+        outTransforms[i].position = { (float)bt.position.v[0], (float)bt.position.v[1], (float)bt.position.v[2], (float)bt.position.v[3] };
+        outTransforms[i].orientation = { (float)bt.orientation.w, (float)bt.orientation.x, (float)bt.orientation.y, (float)bt.orientation.z };
+    }
+}
+
+void FromVRBoneTransforms(const vr::VRBoneTransform_t* transforms, uint32_t count, SkeletonInput& outInput) {
+    outInput.boneTransformCount = count;
+    for (uint32_t i = 0; i < count; i++) {
+        const auto& bt = transforms[i];
+        outInput.boneTransforms[i].position = { bt.position.v[0], bt.position.v[1], bt.position.v[2], bt.position.v[3] };
+        outInput.boneTransforms[i].orientation = { bt.orientation.w, bt.orientation.x, bt.orientation.y, bt.orientation.z };
+    }
+}
+
+vr::VREyeTrackingData_t ToVREyeTrackingData(const EyeTrackingData& data) {
+    vr::VREyeTrackingData_t result = {};
+    result.bActive = data.active;
+    result.bValid = data.valid;
+    result.bTracked = data.tracked;
+    result.vGazeOrigin = { (float)data.gazeOrigin.v[0], (float)data.gazeOrigin.v[1], (float)data.gazeOrigin.v[2] };
+    result.vGazeTarget = { (float)data.gazeTarget.v[0], (float)data.gazeTarget.v[1], (float)data.gazeTarget.v[2] };
+    return result;
+}
+
+EyeTrackingData FromVREyeTrackingData(const vr::VREyeTrackingData_t& data) {
+    EyeTrackingData result = {};
+    result.active = data.bActive;
+    result.valid = data.bValid;
+    result.tracked = data.bTracked;
+    result.gazeOrigin = { data.vGazeOrigin.v[0], data.vGazeOrigin.v[1], data.vGazeOrigin.v[2] };
+    result.gazeTarget = { data.vGazeTarget.v[0], data.vGazeTarget.v[1], data.vGazeTarget.v[2] };
+    return result;
+}

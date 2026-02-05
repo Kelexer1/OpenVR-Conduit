@@ -25,7 +25,6 @@ void Main::pollEvents() {
 			break;
 
 		case vr::VREvent_TrackedDeviceDeactivated:
-			// todo check if we need to do anything here
 			break;
 		}
 	}

@@ -68,9 +68,9 @@ public:
 	 */
 	static void shutdown();
 private:
-	/// Log file stream
+	/** @brief The output file stream */
 	static std::ofstream logFile;
 
-	/// Whether the log file stream has been initialized
+	/** @brief True if the LogManager is initialized, false otherwise */
 	static bool initialized;
 };

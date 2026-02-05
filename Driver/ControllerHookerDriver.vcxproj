@@ -158,6 +158,7 @@
     <ClInclude Include="..\Driver\headers\DeviceProvider.h" />
     <ClInclude Include="..\Driver\headers\HookManager.h" />
     <ClInclude Include="headers\DeviceStateModelDriver.h" />
+    <ClInclude Include="headers\HookFunctions.h" />
     <ClInclude Include="headers\LogManager.h" />
     <ClInclude Include="headers\main.h" />
     <ClInclude Include="headers\SharedDeviceMemoryDriver.h" />
@@ -168,6 +169,7 @@
     <ClCompile Include="..\Driver\src\dllmain.cpp" />
     <ClCompile Include="..\Driver\src\HookManager.cpp" />
     <ClCompile Include="src\DeviceStateModelDriver.cpp" />
+    <ClCompile Include="src\HookFunctions.cpp" />
     <ClCompile Include="src\LogManager.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\SharedDeviceMemoryDriver.cpp" />

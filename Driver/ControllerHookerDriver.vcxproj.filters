@@ -36,6 +36,9 @@
     <ClInclude Include="headers\main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="headers\HookFunctions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Driver\src\DeviceProvider.cpp">
@@ -60,6 +63,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\SharedDeviceMemoryDriver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\HookFunctions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

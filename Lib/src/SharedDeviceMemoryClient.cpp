@@ -386,7 +386,7 @@ std::pair<ObjectEntryData, std::pair<ObjectType, std::unique_ptr<uint8_t[]>>> Sh
 
 	while (!rawEntry->committed.load(std::memory_order_acquire)) {} // Wait for packet to be valid
 
-	ObjectEntryData entry;
+	ObjectEntryData entry = {};
 	entry.successful = true;
 	entry.type = rawEntry->type;
 	entry.deviceIndex = rawEntry->deviceIndex;

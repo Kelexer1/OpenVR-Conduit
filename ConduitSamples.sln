@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DeviceTracker", "Samples\De
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MyFirstConduitApplication", "Samples\MyFirstConduitApplication\MyFirstConduitApplication.vcxproj", "{703D477A-A69D-45E7-B5A8-FFA840EFED0F}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LiveDeviceModification", "Samples\LiveDeviceModification\LiveDeviceModification.vcxproj", "{AC3586B2-0DDB-465E-B0C5-E95EA58A803C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -31,6 +33,14 @@ Global
 		{703D477A-A69D-45E7-B5A8-FFA840EFED0F}.Release|x64.Build.0 = Release|x64
 		{703D477A-A69D-45E7-B5A8-FFA840EFED0F}.Release|x86.ActiveCfg = Release|Win32
 		{703D477A-A69D-45E7-B5A8-FFA840EFED0F}.Release|x86.Build.0 = Release|Win32
+		{AC3586B2-0DDB-465E-B0C5-E95EA58A803C}.Debug|x64.ActiveCfg = Debug|x64
+		{AC3586B2-0DDB-465E-B0C5-E95EA58A803C}.Debug|x64.Build.0 = Debug|x64
+		{AC3586B2-0DDB-465E-B0C5-E95EA58A803C}.Debug|x86.ActiveCfg = Debug|Win32
+		{AC3586B2-0DDB-465E-B0C5-E95EA58A803C}.Debug|x86.Build.0 = Debug|Win32
+		{AC3586B2-0DDB-465E-B0C5-E95EA58A803C}.Release|x64.ActiveCfg = Release|x64
+		{AC3586B2-0DDB-465E-B0C5-E95EA58A803C}.Release|x64.Build.0 = Release|x64
+		{AC3586B2-0DDB-465E-B0C5-E95EA58A803C}.Release|x86.ActiveCfg = Release|Win32
+		{AC3586B2-0DDB-465E-B0C5-E95EA58A803C}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

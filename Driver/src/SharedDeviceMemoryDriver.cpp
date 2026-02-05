@@ -259,9 +259,9 @@ void SharedDeviceMemoryDriver::pollForClientUpdates() {
 			}
 
 			this->clientDriverLaneReadCount = commandHeader.version;
-		} while (commandHeader.version < this->clientDriverLaneReadCount);
+		} while (this->clientDriverLaneReadCount < currentWriteCount);
 
-		this->clientDriverLaneReadCount = headerPtr->clientDriverWriteCount;
+		this->clientDriverLaneReadCount = currentWriteCount;
 	} 
 }
 

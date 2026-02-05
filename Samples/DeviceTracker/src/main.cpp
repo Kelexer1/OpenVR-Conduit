@@ -1,10 +1,19 @@
 #include "DeviceStateCommandSender.h"
 #include "Model.h"
+#include "openvr.h"
 
 #include <chrono>
 #include <thread>
 
 int main() {
+    vr::EVRInitError error = vr::VRInitError_None;
+    vr::IVRSystem* vr = vr::VR_Init(&error, vr::VRApplication_Background);
+
+    if (error != vr::VRInitError_None) {
+        std::cout << "Failed to initialize OpenVR: " << vr::VR_GetVRInitErrorAsEnglishDescription(error) << "\n";
+        while (true) {}
+    }
+
     DeviceStateCommandSender commandSender;
     int initCode = commandSender.initialize();
     if (initCode != 0) {

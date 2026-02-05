@@ -4,11 +4,9 @@
 #include <string>
 #include <Windows.h>
 #include <MinHook.h>
-#include <openvr_driver.h>
 
 #include "LogManager.h"
-#include "DeviceStateModelDriver.h"
-#include "Utils.h"
+#include "HookFunctions.h"
 
 /**
  * @brief Integer offsets from the IVRServerDriverHost interface vtable.
@@ -82,10 +80,21 @@ public:
 	 */
 	static void setHModule(HMODULE hModule);
 private:
-	/// The associated hModule
+	/** @brief The associated HMODULE */
 	static HMODULE hModule;
 
+	/** 
+	 * @brief Debug method used to print out the vtable of a particular class instance
+	 * @param host The pointer to the class instance
+	 */
 	static void dumpVTableFromHost(void* host);
 
+	/**
+	 * @brief Creates and enables a MinHook hook for a given function
+	 * @param targetFunction A pointer to the targetFunction from the vtable
+	 * @param detourFunction A pointer to the function whose calls from targetFunction should be redirected to
+	 * @param originalFunction A pointer whose value should be filled with a pointer to the original function
+	 * @param name The name of the function whose name is being hooked, used for error logging
+	 */
 	static void createHook(void* targetFunction, void* detourFunction, void** originalFunction, const std::string& name);
 };

@@ -18,18 +18,11 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\Model.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="src\Model.h" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>18.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{578ae43c-57a9-4054-8493-659b17002443}</ProjectGuid>
-    <RootNamespace>DeviceTracker</RootNamespace>
+    <ProjectGuid>{AC3586B2-0DDB-465E-B0C5-E95EA58A803C}</ProjectGuid>
+    <RootNamespace>LiveDeviceModification</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -123,8 +116,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)\Build\ConduitLib\$(Configuration);$(SolutionDir)\SharedFiles\Lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);ConduitLib$(Configuration).lib;openvr_api.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)\Build\ConduitLib\$(Configuration);$(SolutionDir)\SharedFiles\Lib</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /Y "$(SolutionDir)SharedFiles\Lib\openvr_api.dll" "$(TargetDir)"</Command>
@@ -144,13 +137,20 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)\Build\ConduitLib\$(Configuration);$(SolutionDir)\SharedFiles\Lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);ConduitLib$(Configuration).lib;openvr_api.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)\Build\ConduitLib\$(Configuration);$(SolutionDir)\SharedFiles\Lib</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /Y "$(SolutionDir)SharedFiles\Lib\openvr_api.dll" "$(TargetDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\StateEventReciever.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\StateEventReciever.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
