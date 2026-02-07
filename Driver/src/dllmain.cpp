@@ -11,13 +11,9 @@
 DeviceProvider deviceProvider;
 
 extern "C" __declspec(dllexport) void* HmdDriverFactory(const char* pInterfaceName, int* pReturnCode) {
-	if (strcmp(vr::IServerTrackedDeviceProvider_Version, pInterfaceName) == 0) {
-		return &deviceProvider;
-	}
+	if (strcmp(vr::IServerTrackedDeviceProvider_Version, pInterfaceName) == 0) return &deviceProvider;
 
-	if (pReturnCode) {
-		*pReturnCode = vr::VRInitError_Init_InterfaceNotFound;
-	}
+	if (pReturnCode) *pReturnCode = vr::VRInitError_Init_InterfaceNotFound;
 
 	return NULL;
 }

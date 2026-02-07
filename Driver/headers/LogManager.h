@@ -2,6 +2,7 @@
 #include <fstream>
 #include <string>
 #include <iostream>
+#include <filesystem>
 #include <fmt/core.h>
 
 /**
@@ -21,7 +22,7 @@ enum LogType {
 class LogManager {
 public:
 	/**
-	 * @brief Initializes the output file (C:\temp\log_ControllerEmulator.txt)
+	 * @brief Initializes the output file (C:\OpenVRConduit\log_OpenVRConduit.txt)
 	 * @return true if initialization was successful, false otherwise
 	 */
 	static bool initialize();
@@ -58,7 +59,7 @@ public:
 		}
 
 		// Output the formatted message
-		std::string message = fmt::format(formatString, std::forward<Args>(args)...);
+		std::string message = fmt::vformat(formatString, fmt::make_format_args(args...));
 		std::cout << prefix << message << std::endl;
 	}
 
@@ -67,9 +68,9 @@ public:
 	 */
 	static void shutdown();
 private:
-	/// Log file stream
+	/** @brief The output file stream */
 	static std::ofstream logFile;
 
-	/// Whether the log file stream has been initialized
+	/** @brief True if the LogManager is initialized, false otherwise */
 	static bool initialized;
 };

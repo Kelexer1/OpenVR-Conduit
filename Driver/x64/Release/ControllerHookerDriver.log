@@ -1,4 +1,0 @@
-﻿C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(524,5): warning MSB8004: Output Directory does not end with a trailing slash.  This build instance will add the slash as it is required to allow proper evaluation of the Output Directory.
-  DeviceProvider.cpp
-C:\Users\tjm11\source\repos\ControllerHooker\Driver\src\DeviceProvider.cpp(22,1): error C2144: syntax error: 'void' should be preceded by ';'
-C:\Users\tjm11\source\repos\ControllerHooker\Driver\src\DeviceProvider.cpp(21,1): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int

@@ -24,32 +24,32 @@
     <ProjectGuid>{D64E546B-7FA2-435D-801A-EA0B74741B13}</ProjectGuid>
     <RootNamespace>ControllerHooker</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>ControllerHookerDriver</ProjectName>
+    <ProjectName>ConduitDriver</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -73,7 +73,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)Build\$(ProjectName)\$(Configuration)\bin\win$(PlatformArchitecture)\</OutDir>
-    <TargetName>driver_controllerhooker</TargetName>
+    <TargetName>driver_conduit</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)Build\$(ProjectName)\$(Configuration)\bin\win$(PlatformArchitecture)\</OutDir>
@@ -115,19 +115,20 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;CONTROLLERHOOKER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);IS_DRIVER</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);IS_DRIVER</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)headers;$(SolutionDir)SharedFiles\headers</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)headers;$(SolutionDir)SharedFiles\headers;$(SolutionDir)Lib\include</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalLibraryDirectories>$(ProjectDir)lib;$(SolutionDir)SharedFiles\lib;$(SolutionDir)Build\ControllerHookerLib\$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)lib;$(SolutionDir)SharedFiles\lib;$(SolutionDir)Build\ConduitLib\$(Configuration)</AdditionalLibraryDirectories>
       <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);libMinHook.x64Debug.lib;openvr_api.lib;fmtd.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -143,7 +144,7 @@
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(ProjectDir)headers;$(SolutionDir)SharedFiles\headers</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)headers;$(SolutionDir)SharedFiles\headers;$(SolutionDir)Lib\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -155,17 +156,23 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\Driver\headers\DeviceProvider.h" />
-    <ClInclude Include="..\Driver\headers\globals.h" />
     <ClInclude Include="..\Driver\headers\HookManager.h" />
-    <ClInclude Include="..\Driver\headers\LogManager.h" />
+    <ClInclude Include="headers\DeviceStateModelDriver.h" />
+    <ClInclude Include="headers\HookFunctions.h" />
+    <ClInclude Include="headers\LogManager.h" />
+    <ClInclude Include="headers\main.h" />
+    <ClInclude Include="headers\SharedDeviceMemoryDriver.h" />
     <ClInclude Include="headers\Utils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Driver\src\DeviceProvider.cpp" />
     <ClCompile Include="..\Driver\src\dllmain.cpp" />
-    <ClCompile Include="..\Driver\src\globals.cpp" />
     <ClCompile Include="..\Driver\src\HookManager.cpp" />
-    <ClCompile Include="..\Driver\src\LogManager.cpp" />
+    <ClCompile Include="src\DeviceStateModelDriver.cpp" />
+    <ClCompile Include="src\HookFunctions.cpp" />
+    <ClCompile Include="src\LogManager.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\SharedDeviceMemoryDriver.cpp" />
     <ClCompile Include="src\Utils.cpp" />
   </ItemGroup>
   <ItemGroup>

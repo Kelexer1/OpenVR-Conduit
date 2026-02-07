@@ -1,18 +1,41 @@
 #include "DeviceProvider.h"
 
+#include <thread>
+
 #include "LogManager.h"
-#include "SharedControllerMemory.h"
-#include "globals.h"
+#include "SharedDeviceMemoryDriver.h"
+#include "main.h"
+
+std::thread mainThread;
 
 vr::EVRInitError DeviceProvider::Init(vr::IVRDriverContext* pDriverContext) {
 	vr::InitServerDriverContext(pDriverContext);
 
-	// Initialize all essential components
-	LogManager::initialize();
-	HookManager::setupHooks((void*)vr::VRServerDriverHost());
+	LogManager::initialize(); // Initialize Log manager
+	HookManager::initializeMinHook(); // Initialize MinHook
+	HookManager::setupHooks_IVRServerDriverHost((void*)vr::VRServerDriverHost()); // IVRServerDriverHost hooks
+	HookManager::setupHooks_IVRDriverInput((void*)vr::VRDriverInput()); // IVRDriverInput hooks
 
-	bool sharedMemoryResult = sharedMemoryIO.initialize(true);
-	LogManager::log(LOG_INFO, "Shared memory initialization {0}", sharedMemoryResult ? "succeeded" : "failed");
+	// IVRProperties hooks
+	void* pProperties = nullptr;
+	vr::EVRInitError propertiesError = vr::VRInitError_None;
+	pProperties = vr::VRDriverContext()->GetGenericInterface(vr::IVRProperties_Version, &propertiesError);
+	if (propertiesError != vr::VRInitError_None) {
+		LogManager::log(LOG_ERROR, "Failed to get IVRProperties interface: {}", static_cast<int>(propertiesError));
+		return propertiesError;
+	}
+	HookManager::setupHooks_IVRProperties(pProperties);
+
+	// Initialize shared memory
+	bool sharedMemoryInitializationResult = SharedDeviceMemoryDriver::getInstance().initialize(); 
+
+	LogManager::log(LOG_INFO, "Shared memory initialization {0}", 
+		sharedMemoryInitializationResult ? "succeeded" : "failed"
+	);
+
+	// Start main thread asyncronously
+	mainThread = std::thread([] { Main::getInstance().main(); });
+	mainThread.detach();
 
 	LogManager::log(LOG_INFO, "Initialized Device Provider");
 
@@ -20,6 +43,10 @@ vr::EVRInitError DeviceProvider::Init(vr::IVRDriverContext* pDriverContext) {
 }
 
 void DeviceProvider::Cleanup() {
+	if (mainThread.joinable()) {
+		mainThread.join();
+	}
+
 	MH_DisableHook(MH_ALL_HOOKS);
 	MH_Uninitialize();
 }
