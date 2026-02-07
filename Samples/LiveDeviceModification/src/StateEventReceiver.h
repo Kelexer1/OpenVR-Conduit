@@ -1,9 +1,14 @@
 #pragma once
-#include "IDeviceStateEventReciever.h"
+#include "IDeviceStateEventReceiver.h"
+#include "DeviceStateCommandSender.h"
+#include "openvr.h"
 #include <iostream>
+#include <vector>
 
-class MyEventReciever : public IDeviceStateEventReciever {
+class StateEventReceiver : public IDeviceStateEventReceiver {
 public:
+	StateEventReceiver(DeviceStateCommandSender& commandSender);
+
 	void DeviceInputBooleanAdded(uint32_t deviceIndex, const std::string& path) override;
 	void DeviceInputBooleanRemoved(uint32_t deviceIndex, const std::string& path) override;
 	void DeviceInputScalarAdded(uint32_t deviceIndex, const std::string& path) override;
@@ -21,4 +26,9 @@ public:
 	void DeviceInputSkeletonChanged(uint32_t deviceIndex, std::string path, SkeletonInput oldInput, SkeletonInput newInput) override;
 	void DeviceInputPoseChanged(uint32_t deviceIndex, std::string path, PoseInput oldInput, PoseInput newInput) override;
 	void DeviceInputEyeTrackingChanged(uint32_t deviceIndex, std::string path, EyeTrackingInput oldInput, EyeTrackingInput newInput) override;
+
+private:
+	DeviceStateCommandSender commandSender;
+
+	std::vector<uint32_t> seenDeviceIndexes;
 };

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "DeviceTypes.h"
-#include "IDeviceStateEventReciever.h"
+#include "IDeviceStateEventReceiver.h"
 
 #include <stdint.h>
 #include <string>
@@ -17,16 +17,16 @@ public:
 	**************************************************/
 
 	/**
-	 * @brief Subscribes an event reciever for live events notifications from the Conduit driver
-	 * @param listener The event reciever
+	 * @brief Subscribes an event receiver for live events notifications from the Conduit driver
+	 * @param listener The event receiver
 	 */
-	void addEventListener(IDeviceStateEventReciever& listener);
+	void addEventListener(IDeviceStateEventReceiver& listener);
 
 	/**
-	 * @brief Stops an existing event reciever from recieving live event notifications from the Conduit driver
-	 * @param listener The event reciever
+	 * @brief Stops an existing event Receiver from recieving live event notifications from the Conduit driver
+	 * @param listener The event receiver
 	 */
-	void removeEventListener(IDeviceStateEventReciever& listener);
+	void removeEventListener(IDeviceStateEventReceiver& listener);
 
 	/**
 	 * @brief Initializes the client, including shared memory and other required objects for functionality
@@ -48,54 +48,54 @@ public:
 	**************************************************/
 
 	/**
-	 * @brief Sets the overriden state of a device pose for a device
+	 * @brief Sets the overridden state of a device pose for a device
 	 * @param deviceIndex The device index of the device
-	 * @param newPose The new overriden pose
+	 * @param newPose The new overridden pose
 	 */
-	void setOverridenDevicePose(uint32_t deviceIndex, const DevicePose newPose);
+	void setOverriddenDevicePose(uint32_t deviceIndex, const DevicePose newPose);
 
 	/**
-	 * @brief Returns the natural (non-overriden) state of a device pose for a device
+	 * @brief Returns the natural (non-overridden) state of a device pose for a device
 	 * @param deviceIndex The device index of the device
 	 * @return A pointer to the pose if successful, nullptr otherwise
 	 */
 	const DevicePose* getNaturalDevicePose(uint32_t deviceIndex);
 
 	/**
-	 * @brief Returns the overriden state of a device pose for a device
+	 * @brief Returns the overridden state of a device pose for a device
 	 * @param deviceIndex The device index of the device
 	 * @return A pointer to the pose if successfull, nullptr otherwise
 	 */
-	const DevicePose* getOverridenDevicePose(uint32_t deviceIndex);
+	const DevicePose* getOverriddenDevicePose(uint32_t deviceIndex);
 
 	/**
-	 * @brief Sets whether the OpenVR runtime should use the overriden state, or the natural state of a devices pose
+	 * @brief Sets whether the OpenVR runtime should use the overridden state, or the natural state of a devices pose
 	 * @param deviceIndex The device index of the device
-	 * @param useOverridenState True if the overriden state should be used, false if the natural state should be used
+	 * @param useOverriddenState True if the overridden state should be used, false if the natural state should be used
 	 */
-	void setUseOverridenDevicePose(uint32_t deviceIndex, bool useOverridenState);
+	void setUseOverriddenDevicePose(uint32_t deviceIndex, bool useOverriddenState);
 
 	/**
-	 * @brief Returns whether the OpenVR runtime is using the overriden or natural state of a devices pose
+	 * @brief Returns whether the OpenVR runtime is using the overridden or natural state of a devices pose
 	 * @param deviceIndex The device index of the device
-	 * @return True if the device is using its overriden state, false otherwise
+	 * @return True if the device is using its overridden state, false otherwise
 	 */
-	bool getUseOverridenDevicePose(uint32_t deviceIndex);
+	bool getUseOverriddenDevicePose(uint32_t deviceIndex);
 
 	/**************************************************
 	* @brief Boolean input commands
 	**************************************************/
 
 	/**
-	 * @brief Sets the overriden state of a boolean input for a device
+	 * @brief Sets the overridden state of a boolean input for a device
 	 * @param deviceIndex The device index of the device
 	 * @param path The input path of the input
-	 * @param newInput The new overriden boolean input state
+	 * @param newInput The new overridden boolean input state
 	 */
-	void setOverridenBooleanInputState(uint32_t deviceIndex, const std::string& path, const BooleanInput newInput);
+	void setOverriddenBooleanInputState(uint32_t deviceIndex, const std::string& path, const BooleanInput newInput);
 
 	/**
-	 * @brief Returns the natural (non-overriden) state of a boolean input for a device
+	 * @brief Returns the natural (non-overridden) state of a boolean input for a device
 	 * @param deviceIndex The device index of the device
 	 * @param path The input path of the input
 	 * @return A pointer to the boolean input if successful, nullptr otherwise
@@ -103,43 +103,43 @@ public:
 	const BooleanInput* getNaturalBooleanInputState(uint32_t deviceIndex, const std::string& path);
 
 	/**
-	 * @brief Returns the overriden state of a boolean input for a device
+	 * @brief Returns the overridden state of a boolean input for a device
 	 * @param deviceIndex The device index of the device
 	 * @param path The input path of the input
 	 * @return A pointer to the boolean input if successful, nullptr otherwise
 	 */
-	const BooleanInput* getOverridenBooleanInputState(uint32_t deviceIndex, const std::string& path);
+	const BooleanInput* getOverriddenBooleanInputState(uint32_t deviceIndex, const std::string& path);
 
 	/**
-	 * @brief Sets whether the OpenVR runtime should use the overriden or natural state of a boolean input
+	 * @brief Sets whether the OpenVR runtime should use the overridden or natural state of a boolean input
 	 * @param deviceIndex The device index of the device
 	 * @param path The input path of the input
-	 * @param useOverridenState True if the overriden state should be used, false if the natural state should be used
+	 * @param useOverriddenState True if the overridden state should be used, false if the natural state should be used
 	 */
-	void setUseOverridenBooleanInputState(uint32_t deviceIndex, const std::string& path, bool useOverridenState);
+	void setUseOverriddenBooleanInputState(uint32_t deviceIndex, const std::string& path, bool useOverriddenState);
 
 	/**
-	 * @brief Returns whether the OpenVR runtime is using the overriden or natural state of a boolean input
+	 * @brief Returns whether the OpenVR runtime is using the overridden or natural state of a boolean input
 	 * @param deviceIndex The device index of the device
 	 * @param path The input path of the input
-	 * @return True if the input is using its overriden state, false otherwise
+	 * @return True if the input is using its overridden state, false otherwise
 	 */
-	bool getUseOverridenBooleanInputState(uint32_t deviceIndex, const std::string& path);
+	bool getUseOverriddenBooleanInputState(uint32_t deviceIndex, const std::string& path);
 
 	/**************************************************
 	* @brief Scalar input commands
 	**************************************************/
 
 	/**
-	 * @brief Sets the overriden state of a scalar input for a device
+	 * @brief Sets the overridden state of a scalar input for a device
 	 * @param deviceIndex The device index of the device
 	 * @param path The input path of the input
-	 * @param newInput The new overriden scalar input state
+	 * @param newInput The new overridden scalar input state
 	 */
-	void setOverridenScalarInputState(uint32_t deviceIndex, const std::string& path, const ScalarInput newInput);
+	void setOverriddenScalarInputState(uint32_t deviceIndex, const std::string& path, const ScalarInput newInput);
 
 	/**
-	 * @brief Returns the natural (non-overriden) state of a scalar input for a device
+	 * @brief Returns the natural (non-overridden) state of a scalar input for a device
 	 * @param deviceIndex The device index of the device
 	 * @param path The input path of the input
 	 * @return A pointer to the scalar input if successful, nullptr otherwise
@@ -147,43 +147,43 @@ public:
 	const ScalarInput* getNaturalScalarInputState(uint32_t deviceIndex, const std::string& path);
 
 	/**
-	 * @brief Returns the overriden state of a scalar input for a device
+	 * @brief Returns the overridden state of a scalar input for a device
 	 * @param deviceIndex The device index of the device
 	 * @param path The input path of the input
 	 * @return A pointer to the scalar input if successful, nullptr otherwise
 	 */
-	const ScalarInput* getOverridenScalarInputState(uint32_t deviceIndex, const std::string& path);
+	const ScalarInput* getOverriddenScalarInputState(uint32_t deviceIndex, const std::string& path);
 
 	/**
-	 * @brief Sets whether the OpenVR runtime should use the overriden or natural state of a scalar input
+	 * @brief Sets whether the OpenVR runtime should use the overridden or natural state of a scalar input
 	 * @param deviceIndex The device index of the device
 	 * @param path The input path of the input
-	 * @param useOverridenState True if the overriden state should be used, false if the natural state should be used
+	 * @param useOverriddenState True if the overridden state should be used, false if the natural state should be used
 	 */
-	void setUseOverridenScalarInputState(uint32_t deviceIndex, const std::string& path, bool useOverridenState);
+	void setUseOverriddenScalarInputState(uint32_t deviceIndex, const std::string& path, bool useOverriddenState);
 
 	/**
-	 * @brief Returns whether the OpenVR runtime is using the overriden or natural state of a scalar input
+	 * @brief Returns whether the OpenVR runtime is using the overridden or natural state of a scalar input
 	 * @param deviceIndex The device index of the device
 	 * @param path The input path of the input
-	 * @return True if the input is using its overriden state, false otherwise
+	 * @return True if the input is using its overridden state, false otherwise
 	 */
-	bool getUseOverridenScalarInputState(uint32_t deviceIndex, const std::string& path);
+	bool getUseOverriddenScalarInputState(uint32_t deviceIndex, const std::string& path);
 
 	/**************************************************
 	* @brief Skeleton input commands
 	**************************************************/
 
 	/**
-	 * @brief Sets the overriden state of a skeleton input for a device
+	 * @brief Sets the overridden state of a skeleton input for a device
 	 * @param deviceIndex The device index of the device
 	 * @param path The input path of the input
-	 * @param newInput The new overriden skeleton input state
+	 * @param newInput The new overridden skeleton input state
 	 */
-	void setOverridenSkeletonInputState(uint32_t deviceIndex, const std::string& path, const SkeletonInput newInput);
+	void setOverriddenSkeletonInputState(uint32_t deviceIndex, const std::string& path, const SkeletonInput newInput);
 
 	/**
-	 * @brief Returns the natural (non-overriden) state of a skeleton input for a device
+	 * @brief Returns the natural (non-overridden) state of a skeleton input for a device
 	 * @param deviceIndex The device index of the device
 	 * @param path The input path of the input
 	 * @return A pointer to the skeleton input if successful, nullptr otherwise
@@ -191,43 +191,43 @@ public:
 	const SkeletonInput* getNaturalSkeletonInputState(uint32_t deviceIndex, const std::string& path);
 
 	/**
-	 * @brief Returns the overriden state of a skeleton input for a device
+	 * @brief Returns the overridden state of a skeleton input for a device
 	 * @param deviceIndex The device index of the device
 	 * @param path The input path of the input
 	 * @return A pointer to the skeleton input if successful, nullptr otherwise
 	 */
-	const SkeletonInput* getOverridenSkeletonInputState(uint32_t deviceIndex, const std::string& path);
+	const SkeletonInput* getOverriddenSkeletonInputState(uint32_t deviceIndex, const std::string& path);
 
 	/**
-	 * @brief Sets whether the OpenVR runtime should use the overriden or natural state of a skeleton input
+	 * @brief Sets whether the OpenVR runtime should use the overridden or natural state of a skeleton input
 	 * @param deviceIndex The device index of the device
 	 * @param path The input path of the input
-	 * @param useOverridenState True if the overriden state should be used, false if the natural state should be used
+	 * @param useOverriddenState True if the overridden state should be used, false if the natural state should be used
 	 */
-	void setUseOverridenSkeletonInputState(uint32_t deviceIndex, const std::string& path, bool useOverridenState);
+	void setUseOverriddenSkeletonInputState(uint32_t deviceIndex, const std::string& path, bool useOverriddenState);
 
 	/**
-	 * @brief Returns whether the OpenVR runtime is using the overriden or natural state of a skeleton input
+	 * @brief Returns whether the OpenVR runtime is using the overridden or natural state of a skeleton input
 	 * @param deviceIndex The device index of the device
 	 * @param path The input path of the input
-	 * @return True if the input is using its overriden state, false otherwise
+	 * @return True if the input is using its overridden state, false otherwise
 	 */
-	bool getUseOverridenSkeletonInputState(uint32_t deviceIndex, const std::string& path);
+	bool getUseOverriddenSkeletonInputState(uint32_t deviceIndex, const std::string& path);
 
 	/**************************************************
 	* @brief Pose input commands
 	**************************************************/
 
 	/**
-	 * @brief Sets the overriden state of a pose input for a device
+	 * @brief Sets the overridden state of a pose input for a device
 	 * @param deviceIndex The device index of the device
 	 * @param path The input path of the input
-	 * @param newInput The new overriden pose input state
+	 * @param newInput The new overridden pose input state
 	 */
-	void setOverridenPoseInputState(uint32_t deviceIndex, const std::string& path, const PoseInput newInput);
+	void setOverriddenPoseInputState(uint32_t deviceIndex, const std::string& path, const PoseInput newInput);
 
 	/**
-	 * @brief Returns the natural (non-overriden) state of a pose input for a device
+	 * @brief Returns the natural (non-overridden) state of a pose input for a device
 	 * @param deviceIndex The device index of the device
 	 * @param path The input path of the input
 	 * @return A pointer to the pose input if successful, nullptr otherwise
@@ -235,43 +235,43 @@ public:
 	const PoseInput* getNaturalPoseInputState(uint32_t deviceIndex, const std::string& path);
 
 	/**
-	 * @brief Returns the overriden state of a pose input for a device
+	 * @brief Returns the overridden state of a pose input for a device
 	 * @param deviceIndex The device index of the device
 	 * @param path The input path of the input
 	 * @return A pointer to the pose input if successful, nullptr otherwise
 	 */
-	const PoseInput* getOverridenPoseInputState(uint32_t deviceIndex, const std::string& path);
+	const PoseInput* getOverriddenPoseInputState(uint32_t deviceIndex, const std::string& path);
 
 	/**
-	 * @brief Sets whether the OpenVR runtime should use the overriden or natural state of a pose input
+	 * @brief Sets whether the OpenVR runtime should use the overridden or natural state of a pose input
 	 * @param deviceIndex The device index of the device
 	 * @param path The input path of the input
-	 * @param useOverridenState True if the overriden state should be used, false if the natural state should be used
+	 * @param useOverriddenState True if the overridden state should be used, false if the natural state should be used
 	 */
-	void setUseOverridenPoseInputState(uint32_t deviceIndex, const std::string& path, bool useOverridenState);
+	void setUseOverriddenPoseInputState(uint32_t deviceIndex, const std::string& path, bool useOverriddenState);
 
 	/**
-	 * @brief Returns whether the OpenVR runtime is using the overriden or natural state of a pose input
+	 * @brief Returns whether the OpenVR runtime is using the overridden or natural state of a pose input
 	 * @param deviceIndex The device index of the device
 	 * @param path The input path of the input
-	 * @return True if the input is using its overriden state, false otherwise
+	 * @return True if the input is using its overridden state, false otherwise
 	 */
-	bool getUseOverridenPoseInputState(uint32_t deviceIndex, const std::string& path);
+	bool getUseOverriddenPoseInputState(uint32_t deviceIndex, const std::string& path);
 
 	/**************************************************
 	* @brief Eye tracking input commands
 	**************************************************/
 
 	/**
-	 * @brief Sets the overriden state of an eye tracking input for a device
+	 * @brief Sets the overridden state of an eye tracking input for a device
 	 * @param deviceIndex The device index of the device
 	 * @param path The input path of the input
-	 * @param newInput The new overriden eye tracking input state
+	 * @param newInput The new overridden eye tracking input state
 	 */
-	void setOverridenEyeTrackingInputState(uint32_t deviceIndex, const std::string& path, const EyeTrackingInput newInput);
+	void setOverriddenEyeTrackingInputState(uint32_t deviceIndex, const std::string& path, const EyeTrackingInput newInput);
 
 	/**
-	 * @brief Returns the natural (non-overriden) state of an eye tracking input for a device
+	 * @brief Returns the natural (non-overridden) state of an eye tracking input for a device
 	 * @param deviceIndex The device index of the device
 	 * @param path The input path of the input
 	 * @return A pointer to the eye tracking input if successful, nullptr otherwise
@@ -279,26 +279,26 @@ public:
 	const EyeTrackingInput* getNaturalEyeTrackingInputState(uint32_t deviceIndex, const std::string& path);
 
 	/**
-	 * @brief Returns the overriden state of an eye tracking input for a device
+	 * @brief Returns the overridden state of an eye tracking input for a device
 	 * @param deviceIndex The device index of the device
 	 * @param path The input path of the input
 	 * @return A pointer to the eye tracking input if successful, nullptr otherwise
 	 */
-	const EyeTrackingInput* getOverridenEyeTrackingInputState(uint32_t deviceIndex, const std::string& path);
+	const EyeTrackingInput* getOverriddenEyeTrackingInputState(uint32_t deviceIndex, const std::string& path);
 
 	/**
-	 * @brief Sets whether the OpenVR runtime should use the overriden or natural state of an eye tracking input
+	 * @brief Sets whether the OpenVR runtime should use the overridden or natural state of an eye tracking input
 	 * @param deviceIndex The device index of the device
 	 * @param path The input path of the input
-	 * @param useOverridenState True if the overriden state should be used, false if the natural state should be used
+	 * @param useOverriddenState True if the overridden state should be used, false if the natural state should be used
 	 */
-	void setUseOverridenEyeTrackingInputState(uint32_t deviceIndex, const std::string& path, bool useOverridenState);
+	void setUseOverriddenEyeTrackingInputState(uint32_t deviceIndex, const std::string& path, bool useOverriddenState);
 
 	/**
-	 * @brief Returns whether the OpenVR runtime is using the overriden or natural state of an eye tracking input
+	 * @brief Returns whether the OpenVR runtime is using the overridden or natural state of an eye tracking input
 	 * @param deviceIndex The device index of the device
 	 * @param path The input path of the input
-	 * @return True if the input is using its overriden state, false otherwise
+	 * @return True if the input is using its overridden state, false otherwise
 	 */
-	bool getUseOverridenEyeTrackingInputState(uint32_t deviceIndex, const std::string& path);
+	bool getUseOverriddenEyeTrackingInputState(uint32_t deviceIndex, const std::string& path);
 };

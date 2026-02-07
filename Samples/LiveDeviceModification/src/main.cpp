@@ -1,5 +1,5 @@
 #include "DeviceStateCommandSender.h"
-#include "StateEventReciever.h"
+#include "StateEventReceiver.h"
 #include <iostream>
 #include <chrono>
 #include <thread>
@@ -20,8 +20,8 @@ int main() {
         while (true) {} // Prevent console from auto closing
     }
 
-    StateEventReciever eventReciever(commandSender);
-    commandSender.addEventListener(eventReciever);
+    StateEventReceiver eventReceiver(commandSender);
+    commandSender.addEventListener(eventReceiver);
     
     std::cout << "Started live modification of devices, controllers should have positions fixed at the origin. " <<
                  "This is a silly and trivial sample application, though it opens up possibilities for endless " <<

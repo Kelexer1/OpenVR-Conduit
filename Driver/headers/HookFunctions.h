@@ -11,7 +11,7 @@ extern void* IVRServerDriverHost;
 extern void* IVRDriverInput;
 
 /**
- * @brief The following functions are wrappers for their OpenVR equivalents, used to push overriden data to the OpenVR
+ * @brief The following functions are wrappers for their OpenVR equivalents, used to push overridden data to the OpenVR
  * runtime. Since they are wrappers of existing methods, documentation is ommited. Original documentation for the
  * wrapped methods is available in the OpenVR SDK
  */
@@ -44,7 +44,7 @@ vr::EVRInputError callUpdatePoseComponent(vr::VRInputComponentHandle_t ulCompone
 vr::EVRInputError callUpdateEyeTrackingComponent(vr::VRInputComponentHandle_t ulComponent, const vr::VREyeTrackingData_t* pEyeTrackingData_t, double fTimeOffset);
 
 /**
- * @brief The following functions are function pointers for OpenVR methods used to push overriden state. Since these
+ * @brief The following functions are function pointers for OpenVR methods used to push overridden state. Since these
  * methods are not implemented by Conduit, documentation is ommited. Source documentation is available in the OpenVR
  * SDK
  */

@@ -5,10 +5,10 @@
 #include "DeviceTypes.h"
 
 /**
- * @brief An interface for a state event reciever. Should be inherited and implemented by client apps. Listeners must be
+ * @brief An interface for a state event receiver. Should be inherited and implemented by client apps. Listeners must be
  * registered using a DeviceStateCommandSender to recieve updates from the Conduit driver
  */
-class IDeviceStateEventReciever {
+class IDeviceStateEventReceiver {
 public:
 	/**
 	 * @brief Notification that a boolean input was activated

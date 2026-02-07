@@ -1,6 +1,6 @@
 #pragma once
 #include "ObjectSchemas.h"
-#include "IDeviceStateEventReciever.h"
+#include "IDeviceStateEventReceiver.h"
 
 #include <unordered_map>
 #include <string>
@@ -18,17 +18,17 @@ public:
 	static DeviceStateModelClient& getInstance();
 
 	/**
-	 * @brief Subscribes an event reciever to state updates from the model
-	 * @param listener The event reciever
+	 * @brief Subscribes an event receiver to state updates from the model
+	 * @param listener The event receiver
 	 */
-	void addEventListener(const IDeviceStateEventReciever& listener);
+	void addEventListener(const IDeviceStateEventReceiver& listener);
 
 	/**
-	 * @brief Stops an event reciever from recieving state updates from the model.
+	 * @brief Stops an event receiver from recieving state updates from the model.
 	 * Does nothing if <listener> is not added beforehand
-	 * @param listener The event reciever
+	 * @param listener The event receiver
 	 */
-	void removeEventListener(const IDeviceStateEventReciever& listener);
+	void removeEventListener(const IDeviceStateEventReceiver& listener);
 
 	/**
 	 * @brief Notifies all listeners that an input was registered
@@ -255,7 +255,7 @@ public:
 	);
 private:
 	/** @brief Collection of registered event listeners */
-	std::vector<IDeviceStateEventReciever*> eventListeners;
+	std::vector<IDeviceStateEventReceiver*> eventListeners;
 
 	/** @brief Maps device indices to their pose states */
 	std::unordered_map<uint32_t, ModelDevicePoseSerialized> devicePoses;

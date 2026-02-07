@@ -11,24 +11,27 @@ std::thread mainThread;
 vr::EVRInitError DeviceProvider::Init(vr::IVRDriverContext* pDriverContext) {
 	vr::InitServerDriverContext(pDriverContext);
 
-	// Initialize all essential components
-	LogManager::initialize();
-	HookManager::initializeHooks();
-	HookManager::setupHooks_IVRServerDriverHost((void*)vr::VRServerDriverHost());
-	HookManager::setupHooks_IVRDriverInput((void*)vr::VRDriverInput());
+	LogManager::initialize(); // Initialize Log manager
+	HookManager::initializeMinHook(); // Initialize MinHook
+	HookManager::setupHooks_IVRServerDriverHost((void*)vr::VRServerDriverHost()); // IVRServerDriverHost hooks
+	HookManager::setupHooks_IVRDriverInput((void*)vr::VRDriverInput()); // IVRDriverInput hooks
 
-	vr::IVRProperties* pProperties = nullptr;
-	vr::EVRInitError eError;
-	pProperties = (vr::IVRProperties*)vr::VRDriverContext()->GetGenericInterface(vr::IVRProperties_Version, &eError);
-	if (!pProperties) {
-		LogManager::log(LOG_ERROR, "Failed to get IVRProperties interface: {}", static_cast<int>(eError));
-		return eError;
+	// IVRProperties hooks
+	void* pProperties = nullptr;
+	vr::EVRInitError propertiesError = vr::VRInitError_None;
+	pProperties = vr::VRDriverContext()->GetGenericInterface(vr::IVRProperties_Version, &propertiesError);
+	if (propertiesError != vr::VRInitError_None) {
+		LogManager::log(LOG_ERROR, "Failed to get IVRProperties interface: {}", static_cast<int>(propertiesError));
+		return propertiesError;
 	}
-	HookManager::setupHooks_IVRProperties((void*)pProperties);
+	HookManager::setupHooks_IVRProperties(pProperties);
 
-	bool sharedMemoryInitializationResult = SharedDeviceMemoryDriver::getInstance().initialize();
+	// Initialize shared memory
+	bool sharedMemoryInitializationResult = SharedDeviceMemoryDriver::getInstance().initialize(); 
 
-	LogManager::log(LOG_INFO, "Shared memory initialization {0}", sharedMemoryInitializationResult ? "succeeded" : "failed");
+	LogManager::log(LOG_INFO, "Shared memory initialization {0}", 
+		sharedMemoryInitializationResult ? "succeeded" : "failed"
+	);
 
 	// Start main thread asyncronously
 	mainThread = std::thread([] { Main::getInstance().main(); });

@@ -45,7 +45,7 @@ public:
 	/**
 	 * @brief Initializes MinHook
 	 */
-	static void initializeHooks();
+	static void initializeMinHook();
 
 	/**
 	 * @brief Hooks to all required methods under IVRServerDriverHost

@@ -159,7 +159,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="include\DeviceStateCommandSender.h" />
-    <ClInclude Include="include\IDeviceStateEventReciever.h" />
+    <ClInclude Include="include\IDeviceStateEventReceiver.h" />
     <ClInclude Include="src\DeviceStateModelClient.h" />
     <ClInclude Include="src\SharedDeviceMemoryClient.h" />
   </ItemGroup>

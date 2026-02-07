@@ -5,7 +5,7 @@ Model::Model(DeviceStateCommandSender& commandSender) : commandSender(commandSen
 
 void Model::DeviceInputBooleanAdded(uint32_t deviceIndex, const std::string& path) {
 	this->booleanInputs[deviceIndex][path];
-	commandSender.setUseOverridenBooleanInputState(deviceIndex, path, true);
+	commandSender.setUseOverriddenBooleanInputState(deviceIndex, path, true);
 }
 
 void Model::DeviceInputBooleanRemoved(uint32_t deviceIndex, const std::string& path) {

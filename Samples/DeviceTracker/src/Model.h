@@ -1,12 +1,12 @@
 #pragma once
 #include "DeviceTypes.h"
 #include "DeviceStateCommandSender.h"
-#include "IDeviceStateEventReciever.h"
+#include "IDeviceStateEventReceiver.h"
 #include <unordered_map>
 #include <string>
 #include <iostream>
 
-class Model : public IDeviceStateEventReciever {
+class Model : public IDeviceStateEventReceiver {
 public:
 	Model(DeviceStateCommandSender& commandSender);
 

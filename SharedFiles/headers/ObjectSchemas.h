@@ -47,14 +47,14 @@ enum ObjectType {
  * @brief Represents the type of client-driver command of a packet
  */
 enum ClientCommandType {
-	Command_SetUseOverridenStateDevicePose,
-	Command_SetOverridenStateDevicePose,
-	Command_SetUseOverridenStateDeviceInput,
-	Command_SetOverridenStateDeviceInputBoolean,
-	Command_SetOverridenStateDeviceInputScalar,
-	Command_SetOverridenStateDeviceInputSkeleton,
-	Command_SetOverridenStateDeviceInputPose,
-	Command_SetOverridenStateDeviceInputEyeTracking
+	Command_SetUseOverriddenStateDevicePose,
+	Command_SetOverriddenStateDevicePose,
+	Command_SetUseOverriddenStateDeviceInput,
+	Command_SetOverriddenStateDeviceInputBoolean,
+	Command_SetOverriddenStateDeviceInputScalar,
+	Command_SetOverriddenStateDeviceInputSkeleton,
+	Command_SetOverriddenStateDeviceInputPose,
+	Command_SetOverriddenStateDeviceInputEyeTracking
 };
 
 #pragma pack(push, 1)
@@ -252,77 +252,77 @@ struct ClientCommandHeader {
 };
 
 /**
- * @brief Parameters for the SetUseOverridenStateDevicePose command
+ * @brief Parameters for the SetUseOverriddenStateDevicePose command
  */
-struct CommandParams_SetUseOverridenStateDevicePose {
+struct CommandParams_SetUseOverriddenStateDevicePose {
 	/** @brief Whether to use the overridden pose state instead of the actual device pose */
-	bool useOverridenState;
+	bool useOverriddenState;
 };
 
 /**
- * @brief Parameters for the SetOverridenStateDevicePose command
+ * @brief Parameters for the SetOverriddenStateDevicePose command
  */
-struct CommandParams_SetOverridenStateDevicePose {
+struct CommandParams_SetOverriddenStateDevicePose {
 	/** @brief The pose value to use when override is enabled */
-	DevicePose overridenPose;
+	DevicePose overriddenPose;
 };
 
 /**
- * @brief Parameters for the SetUseOverridenStateDeviceInput command
+ * @brief Parameters for the SetUseOverriddenStateDeviceInput command
  */
-struct CommandParams_SetUseOverridenStateDeviceInput {
+struct CommandParams_SetUseOverriddenStateDeviceInput {
 	/** @brief Whether to use the overridden input state instead of the actual device input */
-	bool useOverridenState;
+	bool useOverriddenState;
 	/** @brief Offset into the path table identifying the target input */
 	uint32_t inputPathOffset;
 };
 
 /**
- * @brief Parameters for the SetOverridenStateDeviceInputBoolean command
+ * @brief Parameters for the SetOverriddenStateDeviceInputBoolean command
  */
-struct CommandParams_SetOverridenStateDeviceInputBoolean {
+struct CommandParams_SetOverriddenStateDeviceInputBoolean {
 	/** @brief The boolean value to use when override is enabled */
-	BooleanInput overridenValue;
+	BooleanInput overriddenValue;
 	/** @brief Offset into the path table identifying the target input */
 	uint32_t inputPathOffset;
 };
 
 /**
- * @brief Parameters for the SetOverridenStateDeviceInputScalar command
+ * @brief Parameters for the SetOverriddenStateDeviceInputScalar command
  */
-struct CommandParams_SetOverridenStateDeviceInputScalar {
+struct CommandParams_SetOverriddenStateDeviceInputScalar {
 	/** @brief The scalar value to use when override is enabled */
-	ScalarInput overridenValue;
+	ScalarInput overriddenValue;
 	/** @brief Offset into the path table identifying the target input */
 	uint32_t inputPathOffset;
 };
 
 /**
- * @brief Parameters for the SetOverridenStateDeviceInputSkeleton command
+ * @brief Parameters for the SetOverriddenStateDeviceInputSkeleton command
  */
-struct CommandParams_SetOverridenStateDeviceInputSkeleton {
+struct CommandParams_SetOverriddenStateDeviceInputSkeleton {
 	/** @brief The skeleton value to use when override is enabled */
-	SkeletonInput overridenValue;
+	SkeletonInput overriddenValue;
 	/** @brief Offset into the path table identifying the target input */
 	uint32_t inputPathOffset;
 };
 
 /**
- * @brief Parameters for the SetOverridenStateDeviceInputPose command
+ * @brief Parameters for the SetOverriddenStateDeviceInputPose command
  */
-struct CommandParams_SetOverridenStateDeviceInputPose {
+struct CommandParams_SetOverriddenStateDeviceInputPose {
 	/** @brief The pose value to use when override is enabled */
-	PoseInput overridenValue;
+	PoseInput overriddenValue;
 	/** @brief Offset into the path table identifying the target input */
 	uint32_t inputPathOffset;
 };
 
 /**
- * @brief Parameters for the SetOverridenStateDeviceInputEyeTracking command
+ * @brief Parameters for the SetOverriddenStateDeviceInputEyeTracking command
  */
-struct CommandParams_SetOverridenStateDeviceInputEyeTracking {
+struct CommandParams_SetOverriddenStateDeviceInputEyeTracking {
 	/** @brief The eye tracking value to use when override is enabled */
-	EyeTrackingInput overridenValue;
+	EyeTrackingInput overriddenValue;
 	/** @brief Offset into the path table identifying the target input */
 	uint32_t inputPathOffset;
 };
@@ -366,7 +366,7 @@ struct ClientCommandHeaderData {
  */
 struct ModelObjectState {
 	/** @brief Whether to use the overridden state instead of the actual device state */
-	bool useOverridenState;
+	bool useOverriddenState;
 };
 
 /**

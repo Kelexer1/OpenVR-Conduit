@@ -1,5 +1,5 @@
 #include "DeviceStateCommandSender.h"
-#include "MyEventReciever.h"
+#include "MyEventReceiver.h"
 #include "openvr.h"
 #include <iostream>
 #include <chrono>
@@ -21,8 +21,8 @@ int main() {
         while (true) {} // Prevent console from auto closing
     }
 
-    MyEventReciever myEventReciever;
-    myCommandSender.addEventListener(myEventReciever);
+    MyEventReceiver myEventReceiver;
+    myCommandSender.addEventListener(myEventReceiver);
     
     // Keep program from quitting
     while (true) {

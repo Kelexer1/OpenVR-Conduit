@@ -21,7 +21,7 @@
     <ClInclude Include="src\SharedDeviceMemoryClient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\IDeviceStateEventReciever.h">
+    <ClInclude Include="include\IDeviceStateEventReceiver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\DeviceStateCommandSender.h">
