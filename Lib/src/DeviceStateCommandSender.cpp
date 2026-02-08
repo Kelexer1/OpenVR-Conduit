@@ -30,16 +30,16 @@ void DeviceStateCommandSender::setOverriddenDevicePose(uint32_t deviceIndex, con
 	);
 }
 
-const DevicePose* DeviceStateCommandSender::getNaturalDevicePose(uint32_t deviceIndex) {
+std::optional<DevicePose> DeviceStateCommandSender::getNaturalDevicePose(uint32_t deviceIndex) {
 	ModelDevicePoseSerialized* pose = DeviceStateModelClient::getInstance().getDevicePose(deviceIndex);
-	if (pose != nullptr) return &pose->data.pose;
-	return nullptr;
+	if (pose != nullptr) return pose->data.pose;
+	return std::nullopt;
 }
 
-const DevicePose* DeviceStateCommandSender::getOverriddenDevicePose(uint32_t deviceIndex) {
+std::optional<DevicePose> DeviceStateCommandSender::getOverriddenDevicePose(uint32_t deviceIndex) {
 	ModelDevicePoseSerialized* pose = DeviceStateModelClient::getInstance().getDevicePose(deviceIndex);
-	if (pose != nullptr) return &pose->data.overwrittenPose;
-	return nullptr;
+	if (pose != nullptr) return pose->data.overwrittenPose;
+	return std::nullopt;
 }
 
 void DeviceStateCommandSender::setUseOverriddenDevicePose(uint32_t deviceIndex, bool useOverriddenState) {
@@ -77,7 +77,7 @@ void DeviceStateCommandSender::setOverriddenBooleanInputState(uint32_t deviceInd
 	);
 }
 
-const BooleanInput* DeviceStateCommandSender::getNaturalBooleanInputState(
+std::optional<BooleanInput> DeviceStateCommandSender::getNaturalBooleanInputState(
 	uint32_t deviceIndex,
 	const std::string& path
 ) {
@@ -85,12 +85,12 @@ const BooleanInput* DeviceStateCommandSender::getNaturalBooleanInputState(
 		deviceIndex,
 		path
 	);
-	if (input != nullptr) return &input->data.value;
+	if (input != nullptr) return input->data.value;
 
-	return nullptr;
+	return std::nullopt;
 }
 
-const BooleanInput* DeviceStateCommandSender::getOverriddenBooleanInputState(
+std::optional<BooleanInput> DeviceStateCommandSender::getOverriddenBooleanInputState(
 	uint32_t deviceIndex,
 	const std::string& path
 ) {
@@ -98,8 +98,8 @@ const BooleanInput* DeviceStateCommandSender::getOverriddenBooleanInputState(
 		deviceIndex,
 		path
 	);
-	if (input != nullptr) return &input->data.overwrittenValue;
-	return nullptr;
+	if (input != nullptr) return input->data.overwrittenValue;
+	return std::nullopt;
 }
 
 void DeviceStateCommandSender::setUseOverriddenBooleanInputState(
@@ -152,22 +152,22 @@ void DeviceStateCommandSender::setOverriddenScalarInputState(
 	);
 }
 
-const ScalarInput* DeviceStateCommandSender::getNaturalScalarInputState(
+std::optional<ScalarInput> DeviceStateCommandSender::getNaturalScalarInputState(
 	uint32_t deviceIndex,
 	const std::string& path
 ) {
 	ModelDeviceInputScalarSerialized* input = DeviceStateModelClient::getInstance().getScalarInput(deviceIndex, path);
-	if (input != nullptr) return &input->data.value;
-	return nullptr;
+	if (input != nullptr) return input->data.value;
+	return std::nullopt;
 }
 
-const ScalarInput* DeviceStateCommandSender::getOverriddenScalarInputState(
+std::optional<ScalarInput> DeviceStateCommandSender::getOverriddenScalarInputState(
 	uint32_t deviceIndex,
 	const std::string& path
 ) {
 	ModelDeviceInputScalarSerialized* input = DeviceStateModelClient::getInstance().getScalarInput(deviceIndex, path);
-	if (input != nullptr) return &input->data.overwrittenValue;
-	return nullptr;
+	if (input != nullptr) return input->data.overwrittenValue;
+	return std::nullopt;
 }
 
 void DeviceStateCommandSender::setUseOverriddenScalarInputState(
@@ -217,7 +217,7 @@ void DeviceStateCommandSender::setOverriddenSkeletonInputState(
 	);
 }
 
-const SkeletonInput* DeviceStateCommandSender::getNaturalSkeletonInputState(
+std::optional<SkeletonInput> DeviceStateCommandSender::getNaturalSkeletonInputState(
 	uint32_t deviceIndex,
 	const std::string& path
 ) {
@@ -225,17 +225,17 @@ const SkeletonInput* DeviceStateCommandSender::getNaturalSkeletonInputState(
 		deviceIndex,
 		path
 	);
-	if (input != nullptr) return &input->data.value;
-	return nullptr;
+	if (input != nullptr) return input->data.value;
+	return std::nullopt;
 }
 
-const SkeletonInput* DeviceStateCommandSender::getOverriddenSkeletonInputState(uint32_t deviceIndex, const std::string& path) {
+std::optional<SkeletonInput> DeviceStateCommandSender::getOverriddenSkeletonInputState(uint32_t deviceIndex, const std::string& path) {
 	ModelDeviceInputSkeletonSerialized* input = DeviceStateModelClient::getInstance().getSkeletonInput(
 		deviceIndex,
 		path
 	);
-	if (input != nullptr) return &input->data.overwrittenValue;
-	return nullptr;
+	if (input != nullptr) return input->data.overwrittenValue;
+	return std::nullopt;
 }
 
 void DeviceStateCommandSender::setUseOverriddenSkeletonInputState(
@@ -288,16 +288,16 @@ void DeviceStateCommandSender::setOverriddenPoseInputState(
 	);
 }
 
-const PoseInput* DeviceStateCommandSender::getNaturalPoseInputState(uint32_t deviceIndex, const std::string& path) {
+std::optional<PoseInput> DeviceStateCommandSender::getNaturalPoseInputState(uint32_t deviceIndex, const std::string& path) {
 	ModelDeviceInputPoseSerialized* input = DeviceStateModelClient::getInstance().getPoseInput(deviceIndex, path);
-	if (input != nullptr) return &input->data.value;
-	return nullptr;
+	if (input != nullptr) return input->data.value;
+	return std::nullopt;
 }
 
-const PoseInput* DeviceStateCommandSender::getOverriddenPoseInputState(uint32_t deviceIndex, const std::string& path) {
+std::optional<PoseInput> DeviceStateCommandSender::getOverriddenPoseInputState(uint32_t deviceIndex, const std::string& path) {
 	ModelDeviceInputPoseSerialized* input = DeviceStateModelClient::getInstance().getPoseInput(deviceIndex, path);
-	if (input != nullptr) return &input->data.overwrittenValue;
-	return nullptr;
+	if (input != nullptr) return input->data.overwrittenValue;
+	return std::nullopt;
 }
 
 void DeviceStateCommandSender::setUseOverriddenPoseInputState(
@@ -350,7 +350,7 @@ void DeviceStateCommandSender::setOverriddenEyeTrackingInputState(
 	);
 }
 
-const EyeTrackingInput* DeviceStateCommandSender::getNaturalEyeTrackingInputState(
+std::optional<EyeTrackingInput> DeviceStateCommandSender::getNaturalEyeTrackingInputState(
 	uint32_t deviceIndex,
 	const std::string& path
 ) {
@@ -358,11 +358,11 @@ const EyeTrackingInput* DeviceStateCommandSender::getNaturalEyeTrackingInputStat
 		deviceIndex,
 		path
 	);
-	if (input != nullptr) return &input->data.value;
-	return nullptr;
+	if (input != nullptr) return input->data.value;
+	return std::nullopt;
 }
 
-const EyeTrackingInput* DeviceStateCommandSender::getOverriddenEyeTrackingInputState(
+std::optional<EyeTrackingInput> DeviceStateCommandSender::getOverriddenEyeTrackingInputState(
 	uint32_t deviceIndex,
 	const std::string& path
 ) {
@@ -370,8 +370,8 @@ const EyeTrackingInput* DeviceStateCommandSender::getOverriddenEyeTrackingInputS
 		deviceIndex,
 		path
 	);
-	if (input != nullptr) return &input->data.overwrittenValue;
-	return nullptr;
+	if (input != nullptr) return input->data.overwrittenValue;
+	return std::nullopt;
 }
 
 void DeviceStateCommandSender::setUseOverriddenEyeTrackingInputState(
