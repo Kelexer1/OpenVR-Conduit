@@ -9,7 +9,7 @@ SharedDeviceMemoryClient& SharedDeviceMemoryClient::getInstance() {
 }
 
 int SharedDeviceMemoryClient::initialize() {
-	if (this->initialized) return 0;
+	//if (this->initialized) return 0;
 
 	this->sharedMemoryHandle = OpenFileMappingA(FILE_MAP_ALL_ACCESS, FALSE, SHM_NAME);
 
@@ -74,7 +74,7 @@ uint32_t SharedDeviceMemoryClient::getOffsetOfPath(const std::string& path) {
 
 		searchOffset += static_cast<uint32_t>(len) + 1;
 	}
-
+	std::cout << "Path table full\n";
 	return UINT32_MAX;
 }
 
@@ -427,6 +427,8 @@ bool SharedDeviceMemoryClient::isValidObjectPacket(const ObjectEntry* entry, con
 
 	// Valid characters are [a-z]+[A-Z]+[/]
 	if (entry->type != Object_DevicePose) {
+		if (!(0 <= entry->inputPathOffset && entry->inputPathOffset <= PATH_TABLE_SIZE)) return false;
+
 		std::string inputPath = this->getPathFromPathOffset(entry->inputPathOffset);
 
 		for (size_t i = 0; i < MAX_PATH_LENGTH; i++) {

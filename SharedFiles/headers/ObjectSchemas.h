@@ -29,7 +29,7 @@ reset to offset 0. Should be greater than the maximum possible packet size */
 inline const uint32_t LANE_PADDING_SIZE = 1024U * 5U;	// 5kb
 
 /* The rate in Hz that the Conduit driver and lib poll for updates from eachother */
-inline const double POLL_RATE = 512.0;
+inline const double POLL_RATE = 1024.0;
 
 /**
  * @brief Represents the type of input (or pose) of a packet

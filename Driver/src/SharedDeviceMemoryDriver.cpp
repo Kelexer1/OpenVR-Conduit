@@ -73,6 +73,8 @@ bool SharedDeviceMemoryDriver::initializeSharedMemoryData() {
 }
 
 std::string SharedDeviceMemoryDriver::getPathFromPathOffset(uint32_t offset) {
+	if (offset == UINT32_MAX) return std::string();
+
 	uint8_t* pathTableStart = static_cast<uint8_t*>(this->sharedMemory) + this->pathTableStart;
 
 	SharedMemoryHeader* headerPtr = reinterpret_cast<SharedMemoryHeader*>(this->sharedMemory);
@@ -214,7 +216,10 @@ void SharedDeviceMemoryDriver::pollForClientUpdates() {
 					std::string inputPath = this->getPathFromPathOffset(params->inputPathOffset);
 
 					ModelDeviceInputBooleanSerialized* input = model.getBooleanInput(deviceIndex, inputPath);
-					if (input) input->data.overwrittenValue = params->overriddenValue;
+					if (input) {
+						input->data.overwrittenValue = params->overriddenValue;
+						model.setInputBooleanChanged(deviceIndex, inputPath);
+					}
 
 					break;
 				}
@@ -224,7 +229,10 @@ void SharedDeviceMemoryDriver::pollForClientUpdates() {
 					std::string inputPath = this->getPathFromPathOffset(params->inputPathOffset);
 
 					ModelDeviceInputScalarSerialized* input = model.getScalarInput(deviceIndex, inputPath);
-					if (input) input->data.overwrittenValue = params->overriddenValue;
+					if (input) { 
+						input->data.overwrittenValue = params->overriddenValue;
+						model.setInputScalarChanged(deviceIndex, inputPath);
+					}
 
 					break;
 				}
@@ -233,7 +241,10 @@ void SharedDeviceMemoryDriver::pollForClientUpdates() {
 					std::string inputPath = this->getPathFromPathOffset(params->inputPathOffset);
 
 					ModelDeviceInputSkeletonSerialized* input = model.getSkeletonInput(deviceIndex, inputPath);
-					if (input) input->data.overwrittenValue = params->overriddenValue;
+					if (input) { 
+						input->data.overwrittenValue = params->overriddenValue;
+						model.setInputSkeletonChanged(deviceIndex, inputPath);
+					}
 
 					break;
 				}
@@ -242,7 +253,10 @@ void SharedDeviceMemoryDriver::pollForClientUpdates() {
 					std::string inputPath = this->getPathFromPathOffset(params->inputPathOffset);
 
 					ModelDeviceInputPoseSerialized* input = model.getPoseInput(deviceIndex, inputPath);
-					if (input) input->data.overwrittenValue = params->overriddenValue;
+					if (input) { 
+						input->data.overwrittenValue = params->overriddenValue;
+						model.setInputPoseChanged(deviceIndex, inputPath);
+					}
 
 					break;
 				}
@@ -251,7 +265,10 @@ void SharedDeviceMemoryDriver::pollForClientUpdates() {
 					std::string inputPath = this->getPathFromPathOffset(params->inputPathOffset);
 
 					ModelDeviceInputEyeTrackingSerialized* input = model.getEyeTrackingInput(deviceIndex, inputPath);
-					if (input) input->data.overwrittenValue = params->overriddenValue;
+					if (input) {
+						input->data.overwrittenValue = params->overriddenValue;
+						model.setInputEyeTrackingChanged(deviceIndex, inputPath);
+					}
 
 					break;
 				}
@@ -339,6 +356,7 @@ SharedDeviceMemoryDriver::readPacketFromClientDriverLane() {
 				this->clientDriverLaneReadOffset = searchOffset;
 				readStart = laneStart + searchOffset;
 				rawHeader = testHeader;
+				LogManager::log(LOG_DEBUG, "Packet misaligned, forward search {} bytes", i);
 				break;
 			}
 		}
@@ -347,11 +365,14 @@ SharedDeviceMemoryDriver::readPacketFromClientDriverLane() {
 		if (!recovered) {
 			this->clientDriverLaneReadOffset = headerPtr->clientDriverWriteOffset.load(std::memory_order_acquire);
 			this->clientDriverLaneReadCount = headerPtr->clientDriverWriteCount.load(std::memory_order_acquire);
-			return { ClientCommandHeaderData{}, { Command_SetUseOverriddenStateDevicePose , nullptr} };
+			LogManager::log(LOG_DEBUG, "Packet misaligned, jumped to write header");
+			return { ClientCommandHeaderData{}, { Command_SetUseOverriddenStateDevicePose , nullptr } };
 		}
 	}
 
 	while (!rawHeader->committed.load(std::memory_order_acquire)) {} // Wait for packet to be valid
+
+	LogManager::log(LOG_DEBUG, "Read a packet for index {}: {}", rawHeader->deviceIndex, (int)rawHeader->type);
 
 	ClientCommandHeaderData header;
 	header.successful = true;

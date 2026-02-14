@@ -92,6 +92,12 @@ void DeviceStateModel::setInputBooleanChanged(uint32_t deviceIndex, const std::s
 				inputBoolean->data.overwrittenValue.value,
 				inputBoolean->data.overwrittenValue.timeOffset
 			);
+		} else {
+			callUpdateBooleanComponent(
+				this->booleanInputs[deviceIndex][path].first,
+				inputBoolean->data.value.value,
+				inputBoolean->data.value.timeOffset
+			);
 		}
 	}
 }
@@ -159,6 +165,12 @@ void DeviceStateModel::setInputScalarChanged(uint32_t deviceIndex, const std::st
 				inputScalar->data.overwrittenValue.value,
 				inputScalar->data.overwrittenValue.timeOffset
 			);
+		} else {
+			callUpdateScalarComponent(
+				this->scalarInputs[deviceIndex][path].first,
+				inputScalar->data.value.value,
+				inputScalar->data.value.timeOffset
+			);
 		}
 	}
 }
@@ -225,6 +237,15 @@ void DeviceStateModel::setInputSkeletonChanged(uint32_t deviceIndex, const std::
 				transforms,
 				inputSkeleton->data.overwrittenValue.boneTransformCount
 			);
+		} else {
+			vr::VRBoneTransform_t transforms[31];
+			ToVRBoneTransforms(inputSkeleton->data.value, transforms);
+			callUpdateSkeletonComponent(
+				this->skeletonInputs[deviceIndex][path].first,
+				static_cast<vr::EVRSkeletalMotionRange>(inputSkeleton->data.value.motionRange),
+				transforms,
+				inputSkeleton->data.value.boneTransformCount
+			);
 		}
 	}
 }
@@ -288,6 +309,13 @@ void DeviceStateModel::setInputPoseChanged(uint32_t deviceIndex, const std::stri
 				this->poseInputs[deviceIndex][path].first,
 				&poseOffset,
 				inputPose->data.overwrittenValue.timeOffset
+			);
+		} else {
+			vr::HmdMatrix34_t poseOffset = ToHmdMatrix34(inputPose->data.value.poseOffset);
+			callUpdatePoseComponent(
+				this->poseInputs[deviceIndex][path].first,
+				&poseOffset,
+				inputPose->data.value.timeOffset
 			);
 		}
 	}
@@ -363,6 +391,13 @@ void DeviceStateModel::setInputEyeTrackingChanged(uint32_t deviceIndex, const st
 				this->eyeTrackingInputs[deviceIndex][path].first,
 				&eyeData,
 				inputEyeTracking->data.overwrittenValue.timeOffset
+			);
+		} else {
+			vr::VREyeTrackingData_t eyeData = ToVREyeTrackingData(inputEyeTracking->data.value.eyeTrackingData);
+			callUpdateEyeTrackingComponent(
+				this->eyeTrackingInputs[deviceIndex][path].first,
+				&eyeData,
+				inputEyeTracking->data.value.timeOffset
 			);
 		}
 	}
