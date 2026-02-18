@@ -22,7 +22,6 @@ void DeviceStateCommandSender::notifyClientDisconnect() {
 void DeviceStateCommandSender::setOverriddenDevicePose(uint32_t deviceIndex, const DevicePose newPose) {
 	ModelDevicePoseSerialized* pose = DeviceStateModelClient::getInstance().getDevicePose(deviceIndex);
 	if (pose != nullptr) pose->data.overwrittenPose = newPose;
-
 	CommandParams_SetOverriddenStateDevicePose params{};
 	params.overriddenPose = newPose;
 	SharedDeviceMemoryClient::getInstance().issueCommandToSharedMemory(

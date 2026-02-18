@@ -9,8 +9,6 @@ SharedDeviceMemoryClient& SharedDeviceMemoryClient::getInstance() {
 }
 
 int SharedDeviceMemoryClient::initialize() {
-	//if (this->initialized) return 0;
-
 	this->sharedMemoryHandle = OpenFileMappingA(FILE_MAP_ALL_ACCESS, FALSE, SHM_NAME);
 
 	if (!this->sharedMemoryHandle) return 1;
@@ -20,8 +18,15 @@ int SharedDeviceMemoryClient::initialize() {
 	if (header->protocolVersion != PROTOCOL_VERSION) return 3;
 
 	this->pathTableStart = header->pathTableStart;
+
 	this->driverClientLaneStart = header->driverClientLaneStart;
+	this->driverClientLaneReadOffset = header->driverClientWriteOffset.load(std::memory_order_acquire);
+	header->driverClientReadOffset.store(this->driverClientLaneReadOffset, std::memory_order_release);
+	this->driverClientLaneReadCount = header->driverClientWriteCount.load(std::memory_order_acquire);
+
 	this->clientDriverLaneStart = header->clientDriverLaneStart;
+	this->clientDriverLaneWriteOffset = header->clientDriverWriteOffset.load(std::memory_order_acquire);
+	this->clientDriverLaneWriteCount = header->clientDriverWriteCount.load(std::memory_order_acquire);
 
 	std::thread(&SharedDeviceMemoryClient::pollLoop, this).detach();
 
@@ -31,6 +36,8 @@ int SharedDeviceMemoryClient::initialize() {
 }
 
 std::string SharedDeviceMemoryClient::getPathFromPathOffset(uint32_t offset) {
+	if (!(0 <= offset && offset <= PATH_TABLE_SIZE)) return std::string();
+
 	uint8_t* pathTableStart = static_cast<uint8_t*>(this->sharedMemory) + this->pathTableStart;
 
 	SharedMemoryHeader* headerPtr = reinterpret_cast<SharedMemoryHeader*>(this->sharedMemory);
@@ -74,7 +81,7 @@ uint32_t SharedDeviceMemoryClient::getOffsetOfPath(const std::string& path) {
 
 		searchOffset += static_cast<uint32_t>(len) + 1;
 	}
-	std::cout << "Path table full\n";
+
 	return UINT32_MAX;
 }
 
@@ -94,7 +101,6 @@ void SharedDeviceMemoryClient::pollForDriverUpdates() {
 			entry = packet.first;
 
 			if (!entry.successful) break;
-
 			std::unique_ptr<uint8_t[]>& dataBuf = packet.second.second;
 
 			uint32_t deviceIndex = entry.deviceIndex;
@@ -350,38 +356,19 @@ SharedDeviceMemoryClient::readPacketFromDriverClientLane() {
     ObjectEntry* rawEntry = reinterpret_cast<ObjectEntry*>(readStart);
 
 	// Misalignment correction
-	if (!this->isValidObjectPacket(rawEntry, headerPtr)) {
-		bool recovered = false;
-		uint32_t searchOffset = this->driverClientLaneReadOffset;
+	if (!this->isValidObjectPacket(rawEntry, headerPtr) &&
+		!this->realignReadHeader(headerPtr, laneStart, &readStart, writeOffset, &rawEntry))
+		return { ObjectEntryData{}, { Object_DevicePose, nullptr } };
 
-		const uint32_t FORWARD_SEARCH_BYTES = 4096;
-
-		// Strategy 1: Forward Check
-		for (uint32_t i = 0; i < FORWARD_SEARCH_BYTES; i++) {
-			searchOffset = (searchOffset + 1) % LANE_SIZE;
-
-			if (searchOffset == writeOffset) break;
-
-			ObjectEntry* testEntry = reinterpret_cast<ObjectEntry*>(laneStart + searchOffset);
-
-			if (this->isValidObjectPacket(testEntry, headerPtr)) {
-				recovered = true;
-				this->driverClientLaneReadOffset = searchOffset;
-				readStart = laneStart + searchOffset;
-				rawEntry = testEntry;
-				break;
-			}
-		}
-
-		// Strategy 2: Jump To Write Offset
-		if (!recovered) {
-			this->driverClientLaneReadOffset = headerPtr->driverClientWriteOffset.load(std::memory_order_acquire);
-			this->driverClientLaneReadCount = headerPtr->driverClientWriteCount.load(std::memory_order_acquire);
-			return { ObjectEntryData{}, { Object_DevicePose, nullptr } };
+	// Wait for packet to be valid
+	auto start = std::chrono::high_resolution_clock::now();
+	while (!rawEntry->committed.load(std::memory_order_acquire)) {
+		auto now = std::chrono::high_resolution_clock::now();
+		if (std::chrono::duration_cast<std::chrono::microseconds>(now - start).count() > COMMIT_FLAG_TIMEOUT_US) {
+			if (!this->realignReadHeader(headerPtr, laneStart, &readStart, writeOffset, &rawEntry))
+				return { ObjectEntryData{}, { Object_DevicePose, nullptr } };
 		}
 	}
-
-	while (!rawEntry->committed.load(std::memory_order_acquire)) {} // Wait for packet to be valid
 
 	ObjectEntryData entry = {};
 	entry.successful = true;
@@ -416,6 +403,39 @@ SharedDeviceMemoryClient::readPacketFromDriverClientLane() {
     headerPtr->driverClientReadOffset.store(this->driverClientLaneReadOffset, std::memory_order_release);
 
     return std::make_pair(entry, std::make_pair(type, std::move(dataBuffer)));
+}
+
+bool SharedDeviceMemoryClient::realignReadHeader(
+	SharedMemoryHeader* headerPtr,
+	uint8_t* laneStart,
+	uint8_t** readStart,
+	uint32_t writeOffset,
+	ObjectEntry** output
+) {
+	uint32_t searchOffset = this->driverClientLaneReadOffset;
+
+	const uint32_t FORWARD_SEARCH_BYTES = 4096;
+
+	// Strategy 1: Forward Check
+	for (uint32_t i = 0; i < FORWARD_SEARCH_BYTES; i++) {
+		searchOffset = (searchOffset + 1) % LANE_SIZE;
+
+		if (searchOffset == writeOffset) break;
+
+		ObjectEntry* testEntry = reinterpret_cast<ObjectEntry*>(laneStart + searchOffset);
+
+		if (this->isValidObjectPacket(testEntry, headerPtr)) {
+			this->driverClientLaneReadOffset = searchOffset;
+			*readStart = laneStart + searchOffset;
+			*output = testEntry;
+			return true;
+		}
+	}
+
+	// Strategy 2: Jump To Write Offset
+	this->driverClientLaneReadOffset = headerPtr->driverClientWriteOffset.load(std::memory_order_acquire);
+	this->driverClientLaneReadCount = headerPtr->driverClientWriteCount.load(std::memory_order_acquire);
+	return false;
 }
 
 bool SharedDeviceMemoryClient::isValidObjectPacket(const ObjectEntry* entry, const SharedMemoryHeader* header) {

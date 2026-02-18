@@ -31,6 +31,9 @@ inline const uint32_t LANE_PADDING_SIZE = 1024U * 5U;	// 5kb
 /* The rate in Hz that the Conduit driver and lib poll for updates from eachother */
 inline const double POLL_RATE = 1024.0;
 
+/* The number of microseconds the client and driver should wait for the commit flag of the other before timing out */
+inline const uint32_t COMMIT_FLAG_TIMEOUT_US = 10000;
+
 /**
  * @brief Represents the type of input (or pose) of a packet
  */
@@ -56,8 +59,6 @@ enum ClientCommandType {
 	Command_SetOverriddenStateDeviceInputPose,
 	Command_SetOverriddenStateDeviceInputEyeTracking
 };
-
-#pragma pack(push, 1)
 
 /**
  * @brief Represents the central header in shared memory, containing critical metadata needed by both the Conduit
@@ -161,8 +162,8 @@ struct ObjectEntry {
 	/** @brief True if this object is currently active/valid, false if it should be removed */
 	bool valid;
 
-	/** @brief True if this object has successfully and fully finish writing to shared memory */
-	std::atomic<bool> committed;
+	/** @brief True/1 if this object has successfully and fully finish writing to shared memory */
+	alignas(64) std::atomic<uint64_t> committed;
 };
 
 /**
@@ -248,7 +249,7 @@ struct ClientCommandHeader {
 	uint64_t version;
 
 	/** @brief Indicates whether the command has been fully written and is ready to be read */
-	std::atomic<bool> committed;
+	alignas(64) std::atomic<uint64_t> committed;
 };
 
 /**
@@ -326,8 +327,6 @@ struct CommandParams_SetOverriddenStateDeviceInputEyeTracking {
 	/** @brief Offset into the path table identifying the target input */
 	uint32_t inputPathOffset;
 };
-
-#pragma pack(pop)
 
 /**
  * @brief Parsed data from an ObjectEntry, used for processing after reading from shared memory

@@ -108,6 +108,28 @@ private:
 	std::pair<ObjectEntryData, std::pair<ObjectType, std::unique_ptr<uint8_t[]>>> readPacketFromDriverClientLane();
 
 	/**
+	 * @brief Realigns the read header to a valid packet by forward searching for valid packets. If none are found
+	 * after a specified amount of bytes, the read header is advanced to the write header, dropping all packets in
+	 * between
+	 * @param headerPtr The shared memory header
+	 * @param laneStart The start of the shared memory lane
+	 * @param readStart A pointer to where to write the new read offset in the event that forward searching succeeded
+	 * (ie. the method returns true)
+	 * @param writeOffset The current write offset of the writer
+	 * @param output A pointer to where to write the found valid packet from forward searching, only written if forward
+	 * searching was successful (ie. the method returns true)
+	 * @return True if forward searching was successful , false if the read header was forcibly advanced (ie. there
+	 * are no new packets to read)
+	 */
+	bool realignReadHeader(
+		SharedMemoryHeader* headerPtr,
+		uint8_t* laneStart,
+		uint8_t** readStart,
+		uint32_t writeOffset,
+		ObjectEntry** output
+	);
+
+	/**
 	 * @brief Returns true if an only if the given object entry is valid by various criteria
 	 * @param entry The entry to test
 	 * @param header A pointer to the shared memory header, used to cross-check metadata

@@ -73,7 +73,7 @@ bool SharedDeviceMemoryDriver::initializeSharedMemoryData() {
 }
 
 std::string SharedDeviceMemoryDriver::getPathFromPathOffset(uint32_t offset) {
-	if (offset == UINT32_MAX) return std::string();
+	if (!(0 <= offset && offset <= PATH_TABLE_SIZE)) return std::string();
 
 	uint8_t* pathTableStart = static_cast<uint8_t*>(this->sharedMemory) + this->pathTableStart;
 
@@ -133,7 +133,6 @@ void SharedDeviceMemoryDriver::pollForClientUpdates() {
 		std::atomic_thread_fence(std::memory_order_acquire);
 
 		ClientCommandHeaderData commandHeader;
-
 		do {
 			auto packet = this->readPacketFromClientDriverLane();
 			commandHeader = packet.first;
@@ -278,7 +277,7 @@ void SharedDeviceMemoryDriver::pollForClientUpdates() {
 		} while (this->clientDriverLaneReadCount < currentWriteCount);
 
 		this->clientDriverLaneReadCount = currentWriteCount;
-	} 
+	}
 }
 
 void SharedDeviceMemoryDriver::writePacketToDriverClientLane(void* packet, uint32_t packetSize) {
@@ -337,42 +336,21 @@ SharedDeviceMemoryDriver::readPacketFromClientDriverLane() {
 	ClientCommandHeader* rawHeader = reinterpret_cast<ClientCommandHeader*>(readStart);
 
 	// Misalignment correction
-	if (!this->isValidCommandHeader(rawHeader, headerPtr)) {
-		bool recovered = false;
-		uint32_t searchOffset = this->clientDriverLaneReadOffset;
+	if (!this->isValidCommandHeader(rawHeader, headerPtr) &&
+		!this->realignReadHeader(headerPtr, laneStart, &readStart, writeOffset, &rawHeader))
+		return { ClientCommandHeaderData{}, { Command_SetUseOverriddenStateDevicePose , nullptr } };
+		
 
-		const uint32_t FORWARD_SEARCH_BYTES = 4096;
-
-		// Strategy 1: Forward Check
-		for (uint32_t i = 0; i < FORWARD_SEARCH_BYTES; i++) {
-			searchOffset = (searchOffset + 1) % LANE_SIZE;
-
-			if (searchOffset == writeOffset) break;
-
-			ClientCommandHeader* testHeader = reinterpret_cast<ClientCommandHeader*>(laneStart + searchOffset);
-
-			if (this->isValidCommandHeader(testHeader, headerPtr)) {
-				recovered = true;
-				this->clientDriverLaneReadOffset = searchOffset;
-				readStart = laneStart + searchOffset;
-				rawHeader = testHeader;
-				LogManager::log(LOG_DEBUG, "Packet misaligned, forward search {} bytes", i);
-				break;
-			}
-		}
-
-		// Strategy 2: Jump To Write Offset
-		if (!recovered) {
-			this->clientDriverLaneReadOffset = headerPtr->clientDriverWriteOffset.load(std::memory_order_acquire);
-			this->clientDriverLaneReadCount = headerPtr->clientDriverWriteCount.load(std::memory_order_acquire);
-			LogManager::log(LOG_DEBUG, "Packet misaligned, jumped to write header");
-			return { ClientCommandHeaderData{}, { Command_SetUseOverriddenStateDevicePose , nullptr } };
+	// Wait for packet to be valid
+	auto start = std::chrono::high_resolution_clock::now();
+	while (!rawHeader->committed.load(std::memory_order_acquire)) {
+		auto now = std::chrono::high_resolution_clock::now();
+		if (std::chrono::duration_cast<std::chrono::microseconds>(now - start).count() > COMMIT_FLAG_TIMEOUT_US) {
+			LogManager::log(LOG_ERROR, "Timeout waiting for client packet commit");
+			if (!this->realignReadHeader(headerPtr, laneStart, &readStart, writeOffset, &rawHeader))
+				return { ClientCommandHeaderData{}, { Command_SetUseOverriddenStateDevicePose , nullptr } };
 		}
 	}
-
-	while (!rawHeader->committed.load(std::memory_order_acquire)) {} // Wait for packet to be valid
-
-	LogManager::log(LOG_DEBUG, "Read a packet for index {}: {}", rawHeader->deviceIndex, (int)rawHeader->type);
 
 	ClientCommandHeaderData header;
 	header.successful = true;
@@ -409,6 +387,41 @@ SharedDeviceMemoryDriver::readPacketFromClientDriverLane() {
 	headerPtr->clientDriverReadOffset.store(this->clientDriverLaneReadOffset, std::memory_order_release);
 
 	return std::make_pair(header, std::make_pair(type, std::move(dataBuffer)));
+}
+
+bool SharedDeviceMemoryDriver::realignReadHeader(
+	SharedMemoryHeader* headerPtr,
+	uint8_t* laneStart,
+	uint8_t** readStart,
+	uint32_t writeOffset,
+	ClientCommandHeader** output
+) {
+	uint32_t searchOffset = this->clientDriverLaneReadOffset;
+
+	const uint32_t FORWARD_SEARCH_BYTES = 4096;
+
+	// Strategy 1: Forward Check
+	for (uint32_t i = 0; i < FORWARD_SEARCH_BYTES; i++) {
+		searchOffset = (searchOffset + 1) % LANE_SIZE;
+
+		if (searchOffset == writeOffset) break;
+
+		ClientCommandHeader* testHeader = reinterpret_cast<ClientCommandHeader*>(laneStart + searchOffset);
+
+		if (this->isValidCommandHeader(testHeader, headerPtr)) {
+			this->clientDriverLaneReadOffset = searchOffset;
+			*readStart = laneStart + searchOffset;
+			*output = testHeader;
+			LogManager::log(LOG_DEBUG, "Packet misaligned, forward search {} bytes", i);
+			return true;
+		}
+	}
+
+	// Strategy 2: Jump To Write Offset
+	this->clientDriverLaneReadOffset = headerPtr->clientDriverWriteOffset.load(std::memory_order_acquire);
+	this->clientDriverLaneReadCount = headerPtr->clientDriverWriteCount.load(std::memory_order_acquire);
+	LogManager::log(LOG_DEBUG, "Packet misaligned, jumped to write header");
+	return false;
 }
 
 void SharedDeviceMemoryDriver::syncDevicePoseUpdateToSharedMemory(DevicePoseSerialized* packet, uint32_t deviceIndex) {
