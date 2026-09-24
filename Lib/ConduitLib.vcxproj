@@ -22,7 +22,7 @@
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{e6c47a57-7f11-4270-ab83-6bc43f4f9017}</ProjectGuid>
-    <RootNamespace>ControllerHookerLib</RootNamespace>
+    <RootNamespace>ConduitLib</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>ConduitLib</ProjectName>
   </PropertyGroup>
